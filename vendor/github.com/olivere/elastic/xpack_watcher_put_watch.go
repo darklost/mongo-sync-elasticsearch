@@ -12,12 +12,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // XPackWatcherPutWatchService either registers a new watch in Watcher
 // or update an existing one.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/watcher-api-put-watch.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/watcher-api-put-watch.html.
 type XPackWatcherPutWatchService struct {
 	client *Client
 
@@ -123,7 +123,7 @@ func (s *XPackWatcherPutWatchService) Body(body interface{}) *XPackWatcherPutWat
 // buildURL builds the URL for the operation.
 func (s *XPackWatcherPutWatchService) buildURL() (string, url.Values, error) {
 	// Build URL
-	path, err := uritemplates.Expand("/_watcher/watch/{id}", map[string]string{
+	path, err := uritemplates.Expand("/_xpack/watcher/watch/{id}", map[string]string{
 		"id": s.id,
 	})
 	if err != nil {
@@ -144,8 +144,8 @@ func (s *XPackWatcherPutWatchService) buildURL() (string, url.Values, error) {
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if v := s.active; v != nil {
-		params.Set("active", fmt.Sprint(*v))
+	if s.active != nil {
+		params.Set("active", fmt.Sprintf("%v", *s.active))
 	}
 	if s.masterTimeout != "" {
 		params.Set("master_timeout", s.masterTimeout)

@@ -11,13 +11,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // CatAliasesService shows information about currently configured aliases
 // to indices including filter and routing infos.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/cat-aliases.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/cat-aliases.html
 // for details.
 type CatAliasesService struct {
 	client *Client
@@ -142,7 +142,7 @@ func (s *CatAliasesService) buildURL() (string, url.Values, error) {
 
 	// Add query string parameters
 	params := url.Values{
-		"format": []string{"json"}, // always returns as JSON
+		"format": []string{"json"}, // always return JSON
 	}
 	if v := s.pretty; v != nil {
 		params.Set("pretty", fmt.Sprint(*v))

@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // SnapshotGetService lists the snapshots on a repository
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/modules-snapshots.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-snapshots.html
 // for details.
 type SnapshotGetService struct {
 	client *Client
@@ -148,11 +148,11 @@ func (s *SnapshotGetService) buildURL() (string, url.Values, error) {
 	if s.masterTimeout != "" {
 		params.Set("master_timeout", s.masterTimeout)
 	}
-	if v := s.ignoreUnavailable; v != nil {
-		params.Set("ignore_unavailable", fmt.Sprint(*v))
+	if s.ignoreUnavailable != nil {
+		params.Set("ignore_unavailable", fmt.Sprint(*s.ignoreUnavailable))
 	}
-	if v := s.verbose; v != nil {
-		params.Set("verbose", fmt.Sprint(*v))
+	if s.verbose != nil {
+		params.Set("verbose", fmt.Sprint(*s.verbose))
 	}
 	return path, params, nil
 }

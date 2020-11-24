@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesDeleteTemplateService deletes index templates.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-templates.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-templates.html.
 type IndicesDeleteTemplateService struct {
 	client *Client
 

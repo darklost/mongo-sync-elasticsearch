@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesGetService retrieves information about one or more indices.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-get-index.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-get-index.html
 // for more details.
 type IndicesGetService struct {
 	client *Client
@@ -34,6 +34,7 @@ type IndicesGetService struct {
 	allowNoIndices    *bool
 	expandWildcards   string
 	flatSettings      *bool
+	includeTypeName   *bool
 }
 
 // NewIndicesGetService creates a new IndicesGetService.
@@ -124,6 +125,13 @@ func (s *IndicesGetService) ExpandWildcards(expandWildcards string) *IndicesGetS
 	return s
 }
 
+// IncludeTypeName indicates whether to update the mapping for all fields
+// with the same name across all types or not.
+func (s *IndicesGetService) IncludeTypeName(include bool) *IndicesGetService {
+	s.includeTypeName = &include
+	return s
+}
+
 // buildURL builds the URL for the operation.
 func (s *IndicesGetService) buildURL() (string, url.Values, error) {
 	var err error
@@ -169,17 +177,20 @@ func (s *IndicesGetService) buildURL() (string, url.Values, error) {
 	if s.expandWildcards != "" {
 		params.Set("expand_wildcards", s.expandWildcards)
 	}
-	if s.flatSettings != nil {
-		params.Set("flat_settings", fmt.Sprintf("%v", *s.flatSettings))
+	if v := s.flatSettings; v != nil {
+		params.Set("flat_settings", fmt.Sprint(*v))
 	}
-	if s.local != nil {
-		params.Set("local", fmt.Sprintf("%v", *s.local))
+	if v := s.local; v != nil {
+		params.Set("local", fmt.Sprint(*v))
 	}
-	if s.ignoreUnavailable != nil {
-		params.Set("ignore_unavailable", fmt.Sprintf("%v", *s.ignoreUnavailable))
+	if v := s.ignoreUnavailable; v != nil {
+		params.Set("ignore_unavailable", fmt.Sprint(*v))
 	}
-	if s.allowNoIndices != nil {
-		params.Set("allow_no_indices", fmt.Sprintf("%v", *s.allowNoIndices))
+	if v := s.allowNoIndices; v != nil {
+		params.Set("allow_no_indices", fmt.Sprint(*v))
+	}
+	if v := s.includeTypeName; v != nil {
+		params.Set("include_type_name", fmt.Sprint(*v))
 	}
 	return path, params, nil
 }

@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // UpdateByQueryService is documented at https://www.elastic.co/guide/en/elasticsearch/plugins/master/plugins-reindex.html.
@@ -203,7 +203,7 @@ func (s *UpdateByQueryService) AbortOnVersionConflict() *UpdateByQueryService {
 	return s
 }
 
-// ProceedOnVersionConflict aborts the request on version conflicts.
+// ProceedOnVersionConflict won't abort the request on version conflicts.
 // It is an alias to setting Conflicts("proceed").
 func (s *UpdateByQueryService) ProceedOnVersionConflict() *UpdateByQueryService {
 	s.conflicts = "proceed"
@@ -302,7 +302,7 @@ func (s *UpdateByQueryService) Query(query Query) *UpdateByQueryService {
 
 // Refresh indicates whether the effected indexes should be refreshed.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-refresh.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-refresh.html
 // for details.
 func (s *UpdateByQueryService) Refresh(refresh string) *UpdateByQueryService {
 	s.refresh = refresh
@@ -365,7 +365,7 @@ func (s *UpdateByQueryService) Size(size int) *UpdateByQueryService {
 // Slices represents the number of slices (default: 1).
 // It used to  be a number, but can be set to "auto" as of 6.7.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-update-by-query.html#docs-update-by-query-slice
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-update-by-query.html#docs-update-by-query-slice
 // for details.
 func (s *UpdateByQueryService) Slices(slices interface{}) *UpdateByQueryService {
 	s.slices = slices
@@ -517,10 +517,10 @@ func (s *UpdateByQueryService) buildURL() (string, url.Values, error) {
 		params.Set("_source", strings.Join(s.xSource, ","))
 	}
 	if len(s.xSourceExclude) > 0 {
-		params.Set("_source_excludes", strings.Join(s.xSourceExclude, ","))
+		params.Set("_source_exclude", strings.Join(s.xSourceExclude, ","))
 	}
 	if len(s.xSourceInclude) > 0 {
-		params.Set("_source_includes", strings.Join(s.xSourceInclude, ","))
+		params.Set("_source_include", strings.Join(s.xSourceInclude, ","))
 	}
 	if s.allowNoIndices != nil {
 		params.Set("allow_no_indices", fmt.Sprintf("%v", *s.allowNoIndices))
@@ -528,8 +528,8 @@ func (s *UpdateByQueryService) buildURL() (string, url.Values, error) {
 	if s.analyzer != "" {
 		params.Set("analyzer", s.analyzer)
 	}
-	if v := s.analyzeWildcard; v != nil {
-		params.Set("analyze_wildcard", fmt.Sprint(*v))
+	if s.analyzeWildcard != nil {
+		params.Set("analyze_wildcard", fmt.Sprintf("%v", *s.analyzeWildcard))
 	}
 	if s.conflicts != "" {
 		params.Set("conflicts", s.conflicts)
@@ -543,8 +543,8 @@ func (s *UpdateByQueryService) buildURL() (string, url.Values, error) {
 	if s.expandWildcards != "" {
 		params.Set("expand_wildcards", s.expandWildcards)
 	}
-	if v := s.explain; v != nil {
-		params.Set("explain", fmt.Sprint(*v))
+	if s.explain != nil {
+		params.Set("explain", fmt.Sprintf("%v", *s.explain))
 	}
 	if len(s.storedFields) > 0 {
 		params.Set("stored_fields", strings.Join(s.storedFields, ","))
@@ -558,14 +558,14 @@ func (s *UpdateByQueryService) buildURL() (string, url.Values, error) {
 	if s.from != nil {
 		params.Set("from", fmt.Sprintf("%d", *s.from))
 	}
-	if v := s.ignoreUnavailable; v != nil {
-		params.Set("ignore_unavailable", fmt.Sprint(*v))
+	if s.ignoreUnavailable != nil {
+		params.Set("ignore_unavailable", fmt.Sprintf("%v", *s.ignoreUnavailable))
 	}
-	if v := s.lenient; v != nil {
-		params.Set("lenient", fmt.Sprint(*v))
+	if s.lenient != nil {
+		params.Set("lenient", fmt.Sprintf("%v", *s.lenient))
 	}
-	if v := s.lowercaseExpandedTerms; v != nil {
-		params.Set("lowercase_expanded_terms", fmt.Sprint(*v))
+	if s.lowercaseExpandedTerms != nil {
+		params.Set("lowercase_expanded_terms", fmt.Sprintf("%v", *s.lowercaseExpandedTerms))
 	}
 	if s.pipeline != "" {
 		params.Set("pipeline", s.pipeline)
@@ -579,8 +579,8 @@ func (s *UpdateByQueryService) buildURL() (string, url.Values, error) {
 	if s.refresh != "" {
 		params.Set("refresh", s.refresh)
 	}
-	if v := s.requestCache; v != nil {
-		params.Set("request_cache", fmt.Sprint(*v))
+	if s.requestCache != nil {
+		params.Set("request_cache", fmt.Sprintf("%v", *s.requestCache))
 	}
 	if len(s.routing) > 0 {
 		params.Set("routing", strings.Join(s.routing, ","))
@@ -627,20 +627,20 @@ func (s *UpdateByQueryService) buildURL() (string, url.Values, error) {
 	if s.timeout != "" {
 		params.Set("timeout", s.timeout)
 	}
-	if v := s.trackScores; v != nil {
-		params.Set("track_scores", fmt.Sprint(*v))
+	if s.trackScores != nil {
+		params.Set("track_scores", fmt.Sprintf("%v", *s.trackScores))
 	}
-	if v := s.version; v != nil {
-		params.Set("version", fmt.Sprint(*v))
+	if s.version != nil {
+		params.Set("version", fmt.Sprintf("%v", *s.version))
 	}
-	if v := s.versionType; v != nil {
-		params.Set("version_type", fmt.Sprint(*v))
+	if s.versionType != nil {
+		params.Set("version_type", fmt.Sprintf("%v", *s.versionType))
 	}
 	if s.waitForActiveShards != "" {
 		params.Set("wait_for_active_shards", s.waitForActiveShards)
 	}
-	if v := s.waitForCompletion; v != nil {
-		params.Set("wait_for_completion", fmt.Sprint(*v))
+	if s.waitForCompletion != nil {
+		params.Set("wait_for_completion", fmt.Sprintf("%v", *s.waitForCompletion))
 	}
 	if s.requestsPerSecond != nil {
 		params.Set("requests_per_second", fmt.Sprintf("%v", *s.requestsPerSecond))
@@ -708,8 +708,8 @@ func (s *UpdateByQueryService) Do(ctx context.Context) (*BulkIndexByScrollRespon
 		Path:         path,
 		Params:       params,
 		Body:         body,
-		Headers:      s.headers,
 		IgnoreErrors: []int{http.StatusConflict},
+		Headers:      s.headers,
 	})
 	if err != nil {
 		return nil, err
@@ -757,7 +757,6 @@ func (s *UpdateByQueryService) DoAsync(ctx context.Context) (*StartTaskResult, e
 		Path:         path,
 		Params:       params,
 		Body:         body,
-		Headers:      s.headers,
 		IgnoreErrors: []int{http.StatusConflict},
 	})
 	if err != nil {

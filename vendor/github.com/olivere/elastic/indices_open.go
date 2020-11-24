@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesOpenService opens an index.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-open-close.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-open-close.html
 // for details.
 type IndicesOpenService struct {
 	client *Client

@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // PutScriptService adds or updates a stored script in Elasticsearch.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/modules-scripting.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-scripting.html
 // for details.
 type PutScriptService struct {
 	client *Client

@@ -1,3 +1,7 @@
+// Copyright 2012-present Oliver Eilhard. All rights reserved.
+// Use of this source code is governed by a MIT-license.
+// See http://olivere.mit-license.org/license.txt for details.
+
 package elastic
 
 import (
@@ -8,13 +12,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // SnapshotRestoreService restores a snapshot from a snapshot repository.
 //
 // It is documented at
-// https://www.elastic.co/guide/en/elasticsearch/reference/7.1/modules-snapshots.html#_restore.
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-snapshots.html#_restore.
 type SnapshotRestoreService struct {
 	client *Client
 
@@ -241,11 +245,11 @@ func (s *SnapshotRestoreService) buildURL() (string, url.Values, error) {
 	if s.masterTimeout != "" {
 		params.Set("master_timeout", s.masterTimeout)
 	}
-	if v := s.waitForCompletion; v != nil {
-		params.Set("wait_for_completion", fmt.Sprint(*v))
+	if s.waitForCompletion != nil {
+		params.Set("wait_for_completion", fmt.Sprintf("%v", *s.waitForCompletion))
 	}
-	if v := s.ignoreUnavailable; v != nil {
-		params.Set("ignore_unavailable", fmt.Sprint(*v))
+	if s.ignoreUnavailable != nil {
+		params.Set("ignore_unavailable", fmt.Sprintf("%v", *s.ignoreUnavailable))
 	}
 	return path, params, nil
 }

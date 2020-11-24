@@ -15,7 +15,7 @@ import (
 // CatHealthService returns a terse representation of the same information
 // as /_cluster/health.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/cat-health.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/cat-health.html
 // for details.
 type CatHealthService struct {
 	client *Client
@@ -126,7 +126,7 @@ func (s *CatHealthService) buildURL() (string, url.Values, error) {
 
 	// Add query string parameters
 	params := url.Values{
-		"format": []string{"json"}, // always returns as JSON
+		"format": []string{"json"}, // always return JSON
 	}
 	if v := s.pretty; v != nil {
 		params.Set("pretty", fmt.Sprint(*v))

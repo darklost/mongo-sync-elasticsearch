@@ -55,10 +55,10 @@
 // Methods that only return a single document will return a *SingleResult, which works
 // like a *sql.Row:
 //
-// 	  result := struct{
-// 	  	Foo string
-// 	  	Bar int32
-// 	  }{}
+//    result := struct{
+//      Foo string
+//      Bar int32
+//    }{}
 //    filter := bson.D{{"hello", "world"}}
 //    err := collection.FindOne(context.Background(), filter).Decode(&result)
 //    if err != nil { return err }
@@ -79,29 +79,32 @@
 //
 // Client Side Encryption
 //
-// Client-side encryption is a new feature in MongoDB 4.2 that allows specific data fields to be encrypted.
-//
-// Important: This feature is beta. The API for both automatic and explicit encryption/decryption does not have any
-// stability guarantees and backwards-breaking changes may be made before the final release.
+// Client-side encryption is a new feature in MongoDB 4.2 that allows specific data fields to be encrypted. Using this
+// feature requires specifying the "cse" build tag during compilation.
 //
 // Note: Auto encryption is an enterprise-only feature.
 //
-// The libmongocrypt C library is required when using client-side encryption. To install libmongocrypt, do the following:
+// The libmongocrypt C library is required when using client-side encryption. To install libmongocrypt, follow the
+// instructions for your operating system:
 //
-//    // run the clone command in an empty folder because the compile script will create new directories.
-//    git clone https://github.com/mongodb/libmongocrypt
-//    ./libmongocrypt/.evergreen/compile.sh
+// 1. Linux: follow the instructions listed at
+// https://github.com/mongodb/libmongocrypt#installing-libmongocrypt-from-distribution-packages to install the correct
+// deb/rpm package.
 //
-//    // Linux/Darwin: (this requires pkg-config to be installed on the system)
-//    Add <installation_dir>/install/libmongocrypt/lib/pkgconfig:<installation_dir>/install/mongo-c-driver/lib/pkgconfig to PKG_CONFIG_PATH.
-//    Add <installation_dir>/install/libmongocrypt/lib to LD_LIBRARY_PATH
+// 2. Mac: Follow the instructions listed at https://github.com/mongodb/libmongocrypt#installing-libmongocrypt-on-macos
+// to install packages via brew and compile the libmongocrypt source code.
 //
-//    // Windows:
-//    mkdir -p c:/libmongocrypt/include
+// 3. Windows:
 //    mkdir -p c:/libmongocrypt/bin
-//    cp ./install/libmongocrypt/lib/mongocrypt.dll c:/libmongocrypt/bin
-//    cp ./install/libmongocrypt/include/mongocrypt/*.h c:/libmongocrypt/include
-//    // add c:/libmongocrypt/bin to PATH
+//    mkdir -p c:/libmongocrypt/include
+//
+//    // Run the curl command in an empty directory as it will create new directories when unpacked.
+//    curl https://s3.amazonaws.com/mciuploads/libmongocrypt/windows/latest_release/libmongocrypt.tar.gz --output libmongocrypt.tar.gz
+//    tar -xvzf libmongocrypt.tar.gz
+//
+//    cp ./bin/mongocrypt.dll c:/libmongocrypt/bin
+//    cp ./include/mongocrypt/*.h c:/libmongocrypt/include
+//    export PATH=$PATH:/cygdrive/c/libmongocrypt/bin
 //
 // libmongocrypt communicates with the mongocryptd process for automatic encryption. This process can be started manually
 // or auto-spawned by the driver itself. To enable auto-spawning, ensure the process binary is on the PATH. To start it
@@ -113,7 +116,8 @@
 //    }
 //    aeo.SetExtraOptions(mongocryptdOpts)
 // To specify a process URI for mongocryptd, the "mongocryptdURI" option can be passed in the ExtraOptions map as well.
-// More information about mongocryptd will soon be available from the official documentation.
+// See the ClientSideEncryption and ClientSideEncryptionCreateKey examples below for code samples about using this
+// feature.
 //
 // [1] See https://docs.mongodb.com/manual/reference/connection-string/#dns-seedlist-connection-format
 package mongo

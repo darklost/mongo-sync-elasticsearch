@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // XPackWatcherGetWatchService retrieves a watch by its ID.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/watcher-api-get-watch.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/watcher-api-get-watch.html.
 type XPackWatcherGetWatchService struct {
 	client *Client
 
@@ -86,7 +86,7 @@ func (s *XPackWatcherGetWatchService) Id(id string) *XPackWatcherGetWatchService
 // buildURL builds the URL for the operation.
 func (s *XPackWatcherGetWatchService) buildURL() (string, url.Values, error) {
 	// Build URL
-	path, err := uritemplates.Expand("/_watcher/watch/{id}", map[string]string{
+	path, err := uritemplates.Expand("/_xpack/watcher/watch/{id}", map[string]string{
 		"id": s.id,
 	})
 	if err != nil {
@@ -186,8 +186,8 @@ type XPackWatchActionStatus struct {
 }
 
 type XPackWatchActionAckStatus struct {
-	Timestamp      time.Time `json:"timestamp"`
-	AckStatusState string    `json:"ack_status_state"`
+	Timestamp time.Time `json:"timestamp"`
+	State     string    `json:"state"`
 }
 
 type XPackWatchActionExecutionState struct {
@@ -202,13 +202,13 @@ type XPackWatchActionThrottle struct {
 }
 
 type XPackWatch struct {
-	Trigger                map[string]map[string]interface{}  `json:"trigger"`
-	Input                  map[string]map[string]interface{}  `json:"input"`
-	Condition              map[string]map[string]interface{}  `json:"condition"`
-	Transform              map[string]interface{}             `json:"transform,omitempty"`
-	ThrottlePeriod         string                             `json:"throttle_period,omitempty"`
-	ThrottlePeriodInMillis int64                              `json:"throttle_period_in_millis,omitempty"`
-	Actions                map[string]*XPackWatchActionStatus `json:"actions"`
-	Metadata               map[string]interface{}             `json:"metadata,omitempty"`
-	Status                 *XPackWatchStatus                  `json:"status,omitempty"`
+	Trigger                map[string]map[string]interface{} `json:"trigger"`
+	Input                  map[string]map[string]interface{} `json:"input"`
+	Condition              map[string]map[string]interface{} `json:"condition"`
+	Transform              map[string]interface{}            `json:"transform,omitempty"`
+	ThrottlePeriod         string                            `json:"throttle_period,omitempty"`
+	ThrottlePeriodInMillis int64                             `json:"throttle_period_in_millis,omitempty"`
+	Actions                map[string]map[string]interface{} `json:"actions"`
+	Metadata               map[string]interface{}            `json:"metadata,omitempty"`
+	Status                 *XPackWatchStatus                 `json:"status,omitempty"`
 }

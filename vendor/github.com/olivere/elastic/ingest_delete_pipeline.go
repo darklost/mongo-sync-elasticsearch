@@ -12,11 +12,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IngestDeletePipelineService deletes pipelines by ID.
-// It is documented at https://www.elastic.co/guide/en/elasticsearch/reference/7.0/delete-pipeline-api.html.
+// It is documented at https://www.elastic.co/guide/en/elasticsearch/reference/6.8/delete-pipeline-api.html.
 type IngestDeletePipelineService struct {
 	client *Client
 

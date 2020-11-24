@@ -11,14 +11,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // TermvectorsService returns information and statistics on terms in the
 // fields of a particular document. The document could be stored in the
 // index or artificially provided by the user.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-termvectors.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-termvectors.html
 // for documentation.
 type TermvectorsService struct {
 	client *Client
@@ -106,8 +106,6 @@ func (s *TermvectorsService) Index(index string) *TermvectorsService {
 }
 
 // Type of the document.
-//
-// Deprecated: Types are in the process of being removed.
 func (s *TermvectorsService) Type(typ string) *TermvectorsService {
 	s.typ = typ
 	return s
@@ -240,25 +238,19 @@ func (s *TermvectorsService) BodyString(body string) *TermvectorsService {
 func (s *TermvectorsService) buildURL() (string, url.Values, error) {
 	var pathParam = map[string]string{
 		"index": s.index,
+		"type":  s.typ,
 	}
-	path := "/{index}"
+	var path string
 	var err error
 
-	if s.typ != "" {
-		pathParam["type"] = s.typ
-		path += "/{type}"
-	} else {
-		path += "/_termvectors"
-	}
+	// Build URL
 	if s.id != "" {
 		pathParam["id"] = s.id
-		path += "/{id}"
-	}
-	if s.typ != "" {
-		path += "/_termvectors"
+		path, err = uritemplates.Expand("/{index}/{type}/{id}/_termvectors", pathParam)
+	} else {
+		path, err = uritemplates.Expand("/{index}/{type}/_termvectors", pathParam)
 	}
 
-	path, err = uritemplates.Expand(path, pathParam)
 	if err != nil {
 		return "", url.Values{}, err
 	}
@@ -277,38 +269,38 @@ func (s *TermvectorsService) buildURL() (string, url.Values, error) {
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if v := s.dfs; v != nil {
-		params.Set("dfs", fmt.Sprint(*v))
+	if s.dfs != nil {
+		params.Set("dfs", fmt.Sprintf("%v", *s.dfs))
 	}
-	if v := s.fieldStatistics; v != nil {
-		params.Set("field_statistics", fmt.Sprint(*v))
+	if s.fieldStatistics != nil {
+		params.Set("field_statistics", fmt.Sprintf("%v", *s.fieldStatistics))
 	}
 	if len(s.fields) > 0 {
 		params.Set("fields", strings.Join(s.fields, ","))
 	}
-	if v := s.offsets; v != nil {
-		params.Set("offsets", fmt.Sprint(*v))
+	if s.offsets != nil {
+		params.Set("offsets", fmt.Sprintf("%v", *s.offsets))
 	}
 	if s.parent != "" {
 		params.Set("parent", s.parent)
 	}
-	if v := s.payloads; v != nil {
-		params.Set("payloads", fmt.Sprint(*v))
+	if s.payloads != nil {
+		params.Set("payloads", fmt.Sprintf("%v", *s.payloads))
 	}
-	if v := s.positions; v != nil {
-		params.Set("positions", fmt.Sprint(*v))
+	if s.positions != nil {
+		params.Set("positions", fmt.Sprintf("%v", *s.positions))
 	}
 	if s.preference != "" {
 		params.Set("preference", s.preference)
 	}
-	if v := s.realtime; v != nil {
-		params.Set("realtime", fmt.Sprint(*v))
+	if s.realtime != nil {
+		params.Set("realtime", fmt.Sprintf("%v", *s.realtime))
 	}
 	if s.routing != "" {
 		params.Set("routing", s.routing)
 	}
-	if v := s.termStatistics; v != nil {
-		params.Set("term_statistics", fmt.Sprint(*v))
+	if s.termStatistics != nil {
+		params.Set("term_statistics", fmt.Sprintf("%v", *s.termStatistics))
 	}
 	if s.version != nil {
 		params.Set("version", fmt.Sprintf("%v", s.version))
@@ -324,6 +316,9 @@ func (s *TermvectorsService) Validate() error {
 	var invalid []string
 	if s.index == "" {
 		invalid = append(invalid, "Index")
+	}
+	if s.typ == "" {
+		invalid = append(invalid, "Type")
 	}
 	if len(invalid) > 0 {
 		return fmt.Errorf("missing required fields: %v", invalid)
@@ -394,7 +389,7 @@ func (s *TermvectorsService) Do(ctx context.Context) (*TermvectorsResponse, erro
 
 // TermvectorsFilterSettings adds additional filters to a Termsvector request.
 // It allows to filter terms based on their tf-idf scores.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-termvectors.html#_terms_filtering
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-termvectors.html#_terms_filtering
 // for more information.
 type TermvectorsFilterSettings struct {
 	maxNumTerms   *int64

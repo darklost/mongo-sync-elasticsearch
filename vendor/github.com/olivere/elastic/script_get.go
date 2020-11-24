@@ -12,12 +12,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // GetScriptService reads a stored script in Elasticsearch.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/modules-scripting.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-scripting.html
 // for details.
 type GetScriptService struct {
 	client *Client
@@ -161,7 +161,7 @@ func (s *GetScriptService) Do(ctx context.Context) (*GetScriptResponse, error) {
 }
 
 // GetScriptResponse is the result of getting a stored script
-// in Elasticsearch.
+// from Elasticsearch.
 type GetScriptResponse struct {
 	Id     string          `json:"_id"`
 	Found  bool            `json:"found"`

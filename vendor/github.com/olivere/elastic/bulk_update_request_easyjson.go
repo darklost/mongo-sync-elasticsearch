@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson1ed00e60DecodeGithubComOlivereElasticV7(in *jlexer.Lexer, out *bulkUpdateRequestCommandOp) {
+func easyjson1ed00e60DecodeGithubComOlivereElastic(in *jlexer.Lexer, out *bulkUpdateRequestCommandOp) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -90,7 +90,7 @@ func easyjson1ed00e60DecodeGithubComOlivereElasticV7(in *jlexer.Lexer, out *bulk
 		in.Consumed()
 	}
 }
-func easyjson1ed00e60EncodeGithubComOlivereElasticV7(out *jwriter.Writer, in bulkUpdateRequestCommandOp) {
+func easyjson1ed00e60EncodeGithubComOlivereElastic(out *jwriter.Writer, in bulkUpdateRequestCommandOp) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -196,27 +196,27 @@ func easyjson1ed00e60EncodeGithubComOlivereElasticV7(out *jwriter.Writer, in bul
 // MarshalJSON supports json.Marshaler interface
 func (v bulkUpdateRequestCommandOp) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson1ed00e60EncodeGithubComOlivereElasticV7(&w, v)
+	easyjson1ed00e60EncodeGithubComOlivereElastic(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v bulkUpdateRequestCommandOp) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson1ed00e60EncodeGithubComOlivereElasticV7(w, v)
+	easyjson1ed00e60EncodeGithubComOlivereElastic(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *bulkUpdateRequestCommandOp) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson1ed00e60DecodeGithubComOlivereElasticV7(&r, v)
+	easyjson1ed00e60DecodeGithubComOlivereElastic(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *bulkUpdateRequestCommandOp) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson1ed00e60DecodeGithubComOlivereElasticV7(l, v)
+	easyjson1ed00e60DecodeGithubComOlivereElastic(l, v)
 }
-func easyjson1ed00e60DecodeGithubComOlivereElasticV71(in *jlexer.Lexer, out *bulkUpdateRequestCommandData) {
+func easyjson1ed00e60DecodeGithubComOlivereElastic1(in *jlexer.Lexer, out *bulkUpdateRequestCommandData) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -309,7 +309,7 @@ func easyjson1ed00e60DecodeGithubComOlivereElasticV71(in *jlexer.Lexer, out *bul
 		in.Consumed()
 	}
 }
-func easyjson1ed00e60EncodeGithubComOlivereElasticV71(out *jwriter.Writer, in bulkUpdateRequestCommandData) {
+func easyjson1ed00e60EncodeGithubComOlivereElastic1(out *jwriter.Writer, in bulkUpdateRequestCommandData) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -403,37 +403,33 @@ func easyjson1ed00e60EncodeGithubComOlivereElasticV71(out *jwriter.Writer, in bu
 // MarshalJSON supports json.Marshaler interface
 func (v bulkUpdateRequestCommandData) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson1ed00e60EncodeGithubComOlivereElasticV71(&w, v)
+	easyjson1ed00e60EncodeGithubComOlivereElastic1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v bulkUpdateRequestCommandData) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson1ed00e60EncodeGithubComOlivereElasticV71(w, v)
+	easyjson1ed00e60EncodeGithubComOlivereElastic1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *bulkUpdateRequestCommandData) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson1ed00e60DecodeGithubComOlivereElasticV71(&r, v)
+	easyjson1ed00e60DecodeGithubComOlivereElastic1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *bulkUpdateRequestCommandData) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson1ed00e60DecodeGithubComOlivereElasticV71(l, v)
+	easyjson1ed00e60DecodeGithubComOlivereElastic1(l, v)
 }
-func easyjson1ed00e60DecodeGithubComOlivereElasticV72(in *jlexer.Lexer, out *bulkUpdateRequestCommand) {
+func easyjson1ed00e60DecodeGithubComOlivereElastic2(in *jlexer.Lexer, out *bulkUpdateRequestCommand) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		in.Skip()
 	} else {
 		in.Delim('{')
-		if !in.IsDelim('}') {
-			*out = make(bulkUpdateRequestCommand)
-		} else {
-			*out = nil
-		}
+		*out = make(bulkUpdateRequestCommand)
 		for !in.IsDelim('}') {
 			key := string(in.String())
 			in.WantColon()
@@ -448,7 +444,7 @@ func easyjson1ed00e60DecodeGithubComOlivereElasticV72(in *jlexer.Lexer, out *bul
 		in.Consumed()
 	}
 }
-func easyjson1ed00e60EncodeGithubComOlivereElasticV72(out *jwriter.Writer, in bulkUpdateRequestCommand) {
+func easyjson1ed00e60EncodeGithubComOlivereElastic2(out *jwriter.Writer, in bulkUpdateRequestCommand) {
 	if in == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 		out.RawString(`null`)
 	} else {
@@ -471,23 +467,23 @@ func easyjson1ed00e60EncodeGithubComOlivereElasticV72(out *jwriter.Writer, in bu
 // MarshalJSON supports json.Marshaler interface
 func (v bulkUpdateRequestCommand) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson1ed00e60EncodeGithubComOlivereElasticV72(&w, v)
+	easyjson1ed00e60EncodeGithubComOlivereElastic2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v bulkUpdateRequestCommand) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson1ed00e60EncodeGithubComOlivereElasticV72(w, v)
+	easyjson1ed00e60EncodeGithubComOlivereElastic2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *bulkUpdateRequestCommand) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson1ed00e60DecodeGithubComOlivereElasticV72(&r, v)
+	easyjson1ed00e60DecodeGithubComOlivereElastic2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *bulkUpdateRequestCommand) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson1ed00e60DecodeGithubComOlivereElasticV72(l, v)
+	easyjson1ed00e60DecodeGithubComOlivereElastic2(l, v)
 }

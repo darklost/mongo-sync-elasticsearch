@@ -11,13 +11,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // CatAllocationService provides a snapshot of how many shards are allocated
 // to each data node and how much disk space they are using.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/cat-allocation.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/cat-allocation.html
 // for details.
 type CatAllocationService struct {
 	client *Client
@@ -150,7 +150,7 @@ func (s *CatAllocationService) buildURL() (string, url.Values, error) {
 
 	// Add query string parameters
 	params := url.Values{
-		"format": []string{"json"}, // always returns as JSON
+		"format": []string{"json"}, // always return JSON
 	}
 	if v := s.pretty; v != nil {
 		params.Set("pretty", fmt.Sprint(*v))

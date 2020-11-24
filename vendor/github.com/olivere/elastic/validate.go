@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // ValidateService allows a user to validate a potentially
 // expensive query without executing it.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-validate.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-validate.html.
 type ValidateService struct {
 	client *Client
 
@@ -97,10 +97,7 @@ func (s *ValidateService) Index(index ...string) *ValidateService {
 	return s
 }
 
-// Type adds search restrictions for a list of types.
-//
-// Deprecated: Types are in the process of being removed. Instead of using a type, prefer to
-// filter on a field on the document.
+// Types adds search restrictions for a list of types.
 func (s *ValidateService) Type(typ ...string) *ValidateService {
 	s.typ = append(s.typ, typ...)
 	return s
@@ -258,14 +255,14 @@ func (s *ValidateService) buildURL() (string, url.Values, error) {
 	if s.defaultOperator != "" {
 		params.Set("default_operator", s.defaultOperator)
 	}
-	if v := s.lenient; v != nil {
-		params.Set("lenient", fmt.Sprint(*v))
+	if s.lenient != nil {
+		params.Set("lenient", fmt.Sprintf("%v", *s.lenient))
 	}
 	if s.q != "" {
 		params.Set("q", s.q)
 	}
-	if v := s.analyzeWildcard; v != nil {
-		params.Set("analyze_wildcard", fmt.Sprint(*v))
+	if s.analyzeWildcard != nil {
+		params.Set("analyze_wildcard", fmt.Sprintf("%v", *s.analyzeWildcard))
 	}
 	if s.analyzer != "" {
 		params.Set("analyzer", s.analyzer)
@@ -273,14 +270,14 @@ func (s *ValidateService) buildURL() (string, url.Values, error) {
 	if s.df != "" {
 		params.Set("df", s.df)
 	}
-	if v := s.allowNoIndices; v != nil {
-		params.Set("allow_no_indices", fmt.Sprint(*v))
+	if s.allowNoIndices != nil {
+		params.Set("allow_no_indices", fmt.Sprintf("%v", *s.allowNoIndices))
 	}
 	if s.expandWildcards != "" {
 		params.Set("expand_wildcards", s.expandWildcards)
 	}
-	if v := s.ignoreUnavailable; v != nil {
-		params.Set("ignore_unavailable", fmt.Sprint(*v))
+	if s.ignoreUnavailable != nil {
+		params.Set("ignore_unavailable", fmt.Sprintf("%v", *s.ignoreUnavailable))
 	}
 	return path, params, nil
 }

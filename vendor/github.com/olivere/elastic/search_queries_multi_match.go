@@ -12,7 +12,7 @@ import (
 // MultiMatchQuery builds on the MatchQuery to allow multi-field queries.
 //
 // For more details, see
-// https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-multi-match-query.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/query-dsl-multi-match-query.html
 type MultiMatchQuery struct {
 	text               interface{}
 	fields             []string
@@ -60,7 +60,7 @@ func (q *MultiMatchQuery) FieldWithBoost(field string, boost float64) *MultiMatc
 }
 
 // Type can be "best_fields", "boolean", "most_fields", "cross_fields",
-// "phrase", "phrase_prefix" or "bool_prefix"
+// "phrase", or "phrase_prefix".
 func (q *MultiMatchQuery) Type(typ string) *MultiMatchQuery {
 	var zero = float64(0.0)
 	var one = float64(1.0)
@@ -68,22 +68,29 @@ func (q *MultiMatchQuery) Type(typ string) *MultiMatchQuery {
 	switch strings.ToLower(typ) {
 	default: // best_fields / boolean
 		q.typ = "best_fields"
-		q.tieBreaker = &zero
+		if q.tieBreaker == nil {
+			q.tieBreaker = &zero
+		}
 	case "most_fields":
 		q.typ = "most_fields"
-		q.tieBreaker = &one
+		if q.tieBreaker == nil {
+			q.tieBreaker = &one
+		}
 	case "cross_fields":
 		q.typ = "cross_fields"
-		q.tieBreaker = &zero
+		if q.tieBreaker == nil {
+			q.tieBreaker = &zero
+		}
 	case "phrase":
 		q.typ = "phrase"
-		q.tieBreaker = &zero
+		if q.tieBreaker == nil {
+			q.tieBreaker = &zero
+		}
 	case "phrase_prefix":
 		q.typ = "phrase_prefix"
-		q.tieBreaker = &zero
-	case "bool_prefix":
-		q.typ = "bool_prefix"
-		q.tieBreaker = &zero
+		if q.tieBreaker == nil {
+			q.tieBreaker = &zero
+		}
 	}
 	return q
 }

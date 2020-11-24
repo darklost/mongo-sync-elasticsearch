@@ -10,13 +10,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // SnapshotDeleteService deletes a snapshot from a snapshot repository.
 // It is documented at
-// https://www.elastic.co/guide/en/elasticsearch/reference/7.0/modules-snapshots.html.
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-snapshots.html.
 type SnapshotDeleteService struct {
 	client *Client
 
@@ -99,7 +100,21 @@ func (s *SnapshotDeleteService) buildURL() (string, url.Values, error) {
 	if err != nil {
 		return "", url.Values{}, err
 	}
-	return path, url.Values{}, nil
+
+	params := url.Values{}
+	if v := s.pretty; v != nil {
+		params.Set("pretty", fmt.Sprint(*v))
+	}
+	if v := s.human; v != nil {
+		params.Set("human", fmt.Sprint(*v))
+	}
+	if v := s.errorTrace; v != nil {
+		params.Set("error_trace", fmt.Sprint(*v))
+	}
+	if len(s.filterPath) > 0 {
+		params.Set("filter_path", strings.Join(s.filterPath, ","))
+	}
+	return path, params, nil
 }
 
 // Validate checks if the operation is valid.
@@ -132,9 +147,10 @@ func (s *SnapshotDeleteService) Do(ctx context.Context) (*SnapshotDeleteResponse
 
 	// Get HTTP response
 	res, err := s.client.PerformRequest(ctx, PerformRequestOptions{
-		Method: "DELETE",
-		Path:   path,
-		Params: params,
+		Method:  "DELETE",
+		Path:    path,
+		Params:  params,
+		Headers: s.headers,
 	})
 	if err != nil {
 		return nil, err

@@ -12,12 +12,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesCreateService creates a new index.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-create-index.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-create-index.html
 // for details.
 type IndicesCreateService struct {
 	client *Client
@@ -28,11 +28,13 @@ type IndicesCreateService struct {
 	filterPath []string    // list of filters used to reduce the response
 	headers    http.Header // custom request-level HTTP headers
 
-	index         string
-	timeout       string
-	masterTimeout string
-	bodyJson      interface{}
-	bodyString    string
+	index           string
+	timeout         string
+	masterTimeout   string
+	includeTypeName *bool
+	updateAllTypes  *bool
+	bodyJson        interface{}
+	bodyString      string
 }
 
 // NewIndicesCreateService returns a new IndicesCreateService.
@@ -98,6 +100,20 @@ func (s *IndicesCreateService) MasterTimeout(masterTimeout string) *IndicesCreat
 	return s
 }
 
+// IncludeTypeName indicates whether a type should be expected in the
+// body of the mappings.
+func (s *IndicesCreateService) IncludeTypeName(include bool) *IndicesCreateService {
+	s.includeTypeName = &include
+	return s
+}
+
+// UpdateAllTypes indicates whether to update the mapping for all fields
+// with the same name across all types or not.
+func (s *IndicesCreateService) UpdateAllTypes(update bool) *IndicesCreateService {
+	s.updateAllTypes = &update
+	return s
+}
+
 // Body specifies the configuration of the index as a string.
 // It is an alias for BodyString.
 func (s *IndicesCreateService) Body(body string) *IndicesCreateService {
@@ -150,6 +166,12 @@ func (s *IndicesCreateService) Do(ctx context.Context) (*IndicesCreateResult, er
 	}
 	if s.timeout != "" {
 		params.Set("timeout", s.timeout)
+	}
+	if v := s.includeTypeName; v != nil {
+		params.Set("include_type_name", fmt.Sprint(*v))
+	}
+	if v := s.updateAllTypes; v != nil {
+		params.Set("update_all_types", fmt.Sprint(*v))
 	}
 
 	// Setup HTTP request body

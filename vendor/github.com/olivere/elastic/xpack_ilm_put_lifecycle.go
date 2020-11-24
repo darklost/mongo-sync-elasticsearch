@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // See the documentation at
-// https://www.elastic.co/guide/en/elasticsearch/reference/6.7/ilm-put-lifecycle.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/ilm-put-lifecycle.html
 type XPackIlmPutLifecycleService struct {
 	client *Client
 
@@ -146,8 +146,8 @@ func (s *XPackIlmPutLifecycleService) buildURL() (string, url.Values, error) {
 	if s.masterTimeout != "" {
 		params.Set("master_timeout", s.masterTimeout)
 	}
-	if v := s.flatSettings; v != nil {
-		params.Set("flat_settings", fmt.Sprint(*v))
+	if s.flatSettings != nil {
+		params.Set("flat_settings", fmt.Sprintf("%v", *s.flatSettings))
 	}
 	return path, params, nil
 }

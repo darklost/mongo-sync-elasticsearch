@@ -12,11 +12,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // NodesStatsService returns node statistics.
-// See http://www.elastic.co/guide/en/elasticsearch/reference/7.0/cluster-nodes-stats.html
+// See http://www.elastic.co/guide/en/elasticsearch/reference/5.2/cluster-nodes-stats.html
 // for details.
 type NodesStatsService struct {
 	client *Client
@@ -377,7 +377,7 @@ type NodesStatsIndexingStats struct {
 	DeleteCurrent         int64  `json:"delete_current"`
 	NoopUpdateTotal       int64  `json:"noop_update_total"`
 	IsThrottled           bool   `json:"is_throttled"`
-	ThrottledTime         string `json:"throttle_time"` // no typo, see https://github.com/elastic/elasticsearch/blob/ff99bc1d3f8a7ea72718872d214ec2097dfca276/server/src/main/java/org/elasticsearch/index/shard/IndexingStats.java#L244
+	ThrottledTime         string `json:"throttle_time"` // no typo, see https://github.com/elastic/elasticsearch/blob/v6.8.3/server/src/main/java/org/elasticsearch/index/shard/IndexingStats.java#L276
 	ThrottledTimeInMillis int64  `json:"throttle_time_in_millis"`
 
 	Types map[string]*NodesStatsIndexingStats `json:"types"` // stats for individual types

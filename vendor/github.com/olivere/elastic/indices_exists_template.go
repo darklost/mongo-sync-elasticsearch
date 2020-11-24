@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesExistsTemplateService checks if a given template exists.
-// See http://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-templates.html#indices-templates-exists
+// See http://www.elastic.co/guide/en/elasticsearch/reference/5.2/indices-templates.html#indices-templates-exists
 // for documentation.
 type IndicesExistsTemplateService struct {
 	client *Client
@@ -26,8 +26,9 @@ type IndicesExistsTemplateService struct {
 	filterPath []string    // list of filters used to reduce the response
 	headers    http.Header // custom request-level HTTP headers
 
-	name  string
-	local *bool
+	name            string
+	local           *bool
+	includeTypeName *bool
 }
 
 // NewIndicesExistsTemplateService creates a new IndicesExistsTemplateService.
@@ -90,6 +91,13 @@ func (s *IndicesExistsTemplateService) Local(local bool) *IndicesExistsTemplateS
 	return s
 }
 
+// IncludeTypeName indicates whether a type should be expected in the
+// body of the mappings.
+func (s *IndicesExistsTemplateService) IncludeTypeName(include bool) *IndicesExistsTemplateService {
+	s.includeTypeName = &include
+	return s
+}
+
 // buildURL builds the URL for the operation.
 func (s *IndicesExistsTemplateService) buildURL() (string, url.Values, error) {
 	// Build URL
@@ -114,8 +122,11 @@ func (s *IndicesExistsTemplateService) buildURL() (string, url.Values, error) {
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if s.local != nil {
-		params.Set("local", fmt.Sprintf("%v", *s.local))
+	if v := s.local; v != nil {
+		params.Set("local", fmt.Sprint(*v))
+	}
+	if v := s.includeTypeName; v != nil {
+		params.Set("include_type_name", fmt.Sprint(*v))
 	}
 	return path, params, nil
 }
@@ -150,7 +161,7 @@ func (s *IndicesExistsTemplateService) Do(ctx context.Context) (bool, error) {
 		Method:       "HEAD",
 		Path:         path,
 		Params:       params,
-		IgnoreErrors: []int{404},
+		IgnoreErrors: []int{http.StatusNotFound},
 		Headers:      s.headers,
 	})
 	if err != nil {

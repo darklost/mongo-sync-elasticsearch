@@ -14,7 +14,7 @@ import (
 )
 
 // XPackWatcherStatsService returns the current watcher metrics.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/watcher-api-stats.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/watcher-api-stats.html.
 type XPackWatcherStatsService struct {
 	client *Client
 
@@ -90,7 +90,7 @@ func (s *XPackWatcherStatsService) EmitStacktraces(emitStacktraces bool) *XPackW
 // buildURL builds the URL for the operation.
 func (s *XPackWatcherStatsService) buildURL() (string, url.Values, error) {
 	// Build URL
-	path := "/_watcher/stats"
+	path := "/_xpack/watcher/stats"
 
 	// Add query string parameters
 	params := url.Values{}
@@ -106,8 +106,8 @@ func (s *XPackWatcherStatsService) buildURL() (string, url.Values, error) {
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if v := s.emitStacktraces; v != nil {
-		params.Set("emit_stacktraces", fmt.Sprint(*v))
+	if s.emitStacktraces != nil {
+		params.Set("emit_stacktraces", fmt.Sprintf("%v", *s.emitStacktraces))
 	}
 	if s.metric != "" {
 		params.Set("metric", s.metric)

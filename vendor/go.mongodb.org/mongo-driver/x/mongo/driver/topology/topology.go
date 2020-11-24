@@ -64,12 +64,14 @@ type Topology struct {
 
 	done chan struct{}
 
+	pollingRequired   bool
 	pollingDone       chan struct{}
 	pollingwg         sync.WaitGroup
 	rescanSRVInterval time.Duration
 	pollHeartbeatTime atomic.Value // holds a bool
 
-	fsm *fsm
+	updateCallback updateTopologyCallback
+	fsm            *fsm
 
 	// This should really be encapsulated into it's own type. This will likely
 	// require a redesign so we can share a minimum of data between the
@@ -91,6 +93,18 @@ type Topology struct {
 var _ driver.Deployment = &Topology{}
 var _ driver.Subscriber = &Topology{}
 
+type serverSelectionState struct {
+	selector    description.ServerSelector
+	timeoutChan <-chan time.Time
+}
+
+func newServerSelectionState(selector description.ServerSelector, timeoutChan <-chan time.Time) serverSelectionState {
+	return serverSelectionState{
+		selector:    selector,
+		timeoutChan: timeoutChan,
+	}
+}
+
 // New creates a new topology.
 func New(opts ...Option) (*Topology, error) {
 	cfg, err := newConfig(opts...)
@@ -109,14 +123,24 @@ func New(opts ...Option) (*Topology, error) {
 		dnsResolver:       dns.DefaultResolver,
 	}
 	t.desc.Store(description.Topology{})
+	t.updateCallback = func(desc description.Server) description.Server {
+		return t.apply(context.TODO(), desc)
+	}
 
+	// A replica set name sets the initial topology type to ReplicaSetNoPrimary unless a direct connection is also
+	// specified, in which case the initial type is Single.
 	if cfg.replicaSetName != "" {
 		t.fsm.SetName = cfg.replicaSetName
 		t.fsm.Kind = description.ReplicaSetNoPrimary
 	}
 
+	// A direct connection unconditionally sets the topology type to Single.
 	if cfg.mode == SingleMode {
 		t.fsm.Kind = description.Single
+	}
+
+	if t.cfg.uri != "" {
+		t.pollingRequired = strings.HasPrefix(t.cfg.uri, "mongodb+srv://")
 	}
 
 	return t, nil
@@ -142,7 +166,7 @@ func (t *Topology) Connect() error {
 	}
 	t.serversLock.Unlock()
 
-	if srvPollingRequired(t.cfg.cs.Original) {
+	if t.pollingRequired {
 		go t.pollSRVRecords()
 		t.pollingwg.Add(1)
 	}
@@ -180,7 +204,7 @@ func (t *Topology) Disconnect(ctx context.Context) error {
 	t.subscriptionsClosed = true
 	t.subLock.Unlock()
 
-	if srvPollingRequired(t.cfg.cs.Original) {
+	if t.pollingRequired {
 		t.pollingDone <- struct{}{}
 		t.pollingwg.Wait()
 	}
@@ -189,10 +213,6 @@ func (t *Topology) Disconnect(ctx context.Context) error {
 
 	atomic.StoreInt32(&t.connectionstate, disconnected)
 	return nil
-}
-
-func srvPollingRequired(connstr string) bool {
-	return strings.HasPrefix(connstr, "mongodb+srv://")
 }
 
 // Description returns a description of the topology.
@@ -270,16 +290,6 @@ func (t *Topology) RequestImmediateCheck() {
 	t.serversLock.Unlock()
 }
 
-// SupportsSessions returns true if the topology supports sessions.
-func (t *Topology) SupportsSessions() bool {
-	return t.Description().SessionTimeoutMinutes != 0 && t.Description().Kind != description.Single
-}
-
-// SupportsRetryWrites returns true if the topology supports retryable writes, which it does if it supports sessions.
-func (t *Topology) SupportsRetryWrites() bool {
-	return t.SupportsSessions()
-}
-
 // SelectServer selects a server with given a selector. SelectServer complies with the
 // server selection spec, and will time out after severSelectionTimeout or when the
 // parent context is done.
@@ -295,16 +305,39 @@ func (t *Topology) SelectServer(ctx context.Context, ss description.ServerSelect
 		defer ssTimeout.Stop()
 	}
 
-	sub, err := t.Subscribe()
-	if err != nil {
-		return nil, err
-	}
-	defer t.Unsubscribe(sub)
-
+	var doneOnce bool
+	var sub *driver.Subscription
+	selectionState := newServerSelectionState(ss, ssTimeoutCh)
 	for {
-		suitable, err := t.selectServer(ctx, sub.Updates, ss, ssTimeoutCh)
-		if err != nil {
-			return nil, err
+		var suitable []description.Server
+		var selectErr error
+
+		if !doneOnce {
+			// for the first pass, select a server from the current description.
+			// this improves selection speed for up-to-date topology descriptions.
+			suitable, selectErr = t.selectServerFromDescription(t.Description(), selectionState)
+			doneOnce = true
+		} else {
+			// if the first pass didn't select a server, the previous description did not contain a suitable server, so
+			// we subscribe to the topology and attempt to obtain a server from that subscription
+			if sub == nil {
+				var err error
+				sub, err = t.Subscribe()
+				if err != nil {
+					return nil, err
+				}
+				defer t.Unsubscribe(sub)
+			}
+
+			suitable, selectErr = t.selectServerFromSubscription(ctx, sub.Updates, selectionState)
+		}
+		if selectErr != nil {
+			return nil, selectErr
+		}
+
+		if len(suitable) == 0 {
+			// try again if there are no servers available
+			continue
 		}
 
 		selected := suitable[rand.Intn(len(suitable))]
@@ -344,8 +377,9 @@ func (t *Topology) SelectServerLegacy(ctx context.Context, ss description.Server
 	}
 	defer t.Unsubscribe(sub)
 
+	selectionState := newServerSelectionState(ss, ssTimeoutCh)
 	for {
-		suitable, err := t.selectServer(ctx, sub.Updates, ss, ssTimeoutCh)
+		suitable, err := t.selectServerFromSubscription(ctx, sub.Updates, selectionState)
 		if err != nil {
 			return nil, err
 		}
@@ -387,40 +421,56 @@ func (t *Topology) FindServer(selected description.Server) (*SelectedServer, err
 }
 
 func wrapServerSelectionError(err error, t *Topology) error {
-	return fmt.Errorf("server selection error: %v\ncurrent topology: %s", err, t.String())
+	return fmt.Errorf("server selection error: %v, current topology: { %s }", err, t.String())
 }
 
-// selectServer is the core piece of server selection. It handles getting
-// topology descriptions and running sever selection on those descriptions.
-func (t *Topology) selectServer(ctx context.Context, subscriptionCh <-chan description.Topology, ss description.ServerSelector, timeoutCh <-chan time.Time) ([]description.Server, error) {
+// selectServerFromSubscription loops until a topology description is available for server selection. It returns
+// when the given context expires, server selection timeout is reached, or a description containing a selectable
+// server is available.
+func (t *Topology) selectServerFromSubscription(ctx context.Context, subscriptionCh <-chan description.Topology,
+	selectionState serverSelectionState) ([]description.Server, error) {
+
 	var current description.Topology
 	for {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		case <-timeoutCh:
+		case <-selectionState.timeoutChan:
 			return nil, wrapServerSelectionError(ErrServerSelectionTimeout, t)
 		case current = <-subscriptionCh:
 		}
 
-		var allowed []description.Server
-		for _, s := range current.Servers {
-			if s.Kind != description.Unknown {
-				allowed = append(allowed, s)
-			}
-		}
-
-		suitable, err := ss.SelectServer(current, allowed)
+		suitable, err := t.selectServerFromDescription(current, selectionState)
 		if err != nil {
-			return nil, wrapServerSelectionError(err, t)
+			return nil, err
 		}
 
 		if len(suitable) > 0 {
 			return suitable, nil
 		}
-
 		t.RequestImmediateCheck()
 	}
+}
+
+// selectServerFromDescription process the given topology description and returns a slice of suitable servers.
+func (t *Topology) selectServerFromDescription(desc description.Topology,
+	selectionState serverSelectionState) ([]description.Server, error) {
+
+	// Unlike selectServerFromSubscription, this code path does not check ctx.Done or selectionState.timeoutChan because
+	// selecting a server from a description is not a blocking operation.
+
+	var allowed []description.Server
+	for _, s := range desc.Servers {
+		if s.Kind != description.Unknown {
+			allowed = append(allowed, s)
+		}
+	}
+
+	suitable, err := selectionState.selector.SelectServer(desc, allowed)
+	if err != nil {
+		return nil, wrapServerSelectionError(err, t)
+	}
+	return suitable, nil
 }
 
 func (t *Topology) pollSRVRecords() {
@@ -441,7 +491,7 @@ func (t *Topology) pollSRVRecords() {
 	}()
 
 	// remove the scheme
-	uri := t.cfg.cs.Original[14:]
+	uri := t.cfg.uri[14:]
 	hosts := uri
 	if idx := strings.IndexAny(uri, "/?@"); idx != -1 {
 		hosts = uri[:idx]
@@ -539,21 +589,28 @@ func (t *Topology) processSRVResults(parsedHosts []string) bool {
 
 }
 
-func (t *Topology) apply(ctx context.Context, desc description.Server) {
-	var err error
-
+// apply updates the Topology and its underlying FSM based on the provided server description and returns the server
+// description that should be stored.
+func (t *Topology) apply(ctx context.Context, desc description.Server) description.Server {
 	t.serversLock.Lock()
 	defer t.serversLock.Unlock()
 
-	if _, ok := t.servers[desc.Addr]; t.serversClosed || !ok {
-		return
+	ind, ok := t.fsm.findServer(desc.Addr)
+	if t.serversClosed || !ok {
+		return desc
 	}
 
 	prev := t.fsm.Topology
+	oldDesc := t.fsm.Servers[ind]
+	if description.CompareTopologyVersion(oldDesc.TopologyVersion, desc.TopologyVersion) > 0 {
+		return oldDesc
+	}
 
-	current, err := t.fsm.apply(desc)
+	var current description.Topology
+	var err error
+	current, desc, err = t.fsm.apply(desc)
 	if err != nil {
-		return
+		return desc
 	}
 
 	diff := description.DiffTopology(prev, current)
@@ -586,6 +643,7 @@ func (t *Topology) apply(ctx context.Context, desc description.Server) {
 	}
 	t.subLock.Unlock()
 
+	return desc
 }
 
 func (t *Topology) addServer(addr address.Address) error {
@@ -593,10 +651,7 @@ func (t *Topology) addServer(addr address.Address) error {
 		return nil
 	}
 
-	topoFunc := func(desc description.Server) {
-		t.apply(context.TODO(), desc)
-	}
-	svr, err := ConnectServer(addr, topoFunc, t.cfg.serverOpts...)
+	svr, err := ConnectServer(addr, t.updateCallback, t.cfg.serverOpts...)
 	if err != nil {
 		return err
 	}
@@ -609,11 +664,12 @@ func (t *Topology) addServer(addr address.Address) error {
 // String implements the Stringer interface
 func (t *Topology) String() string {
 	desc := t.Description()
-	str := fmt.Sprintf("Type: %s\nServers:\n", desc.Kind)
+
+	serversStr := ""
 	t.serversLock.Lock()
 	defer t.serversLock.Unlock()
 	for _, s := range t.servers {
-		str += s.String() + "\n"
+		serversStr += "{ " + s.String() + " }, "
 	}
-	return str
+	return fmt.Sprintf("Type: %s, Servers: [%s]", desc.Kind, serversStr)
 }

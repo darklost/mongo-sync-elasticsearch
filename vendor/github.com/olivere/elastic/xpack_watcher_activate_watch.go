@@ -12,11 +12,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // XPackWatcherActivateWatchService enables you to activate a currently inactive watch.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/watcher-api-activate-watch.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/watcher-api-activate-watch.html.
 type XPackWatcherActivateWatchService struct {
 	client *Client
 
@@ -92,7 +92,7 @@ func (s *XPackWatcherActivateWatchService) MasterTimeout(masterTimeout string) *
 // buildURL builds the URL for the operation.
 func (s *XPackWatcherActivateWatchService) buildURL() (string, url.Values, error) {
 	// Build URL
-	path, err := uritemplates.Expand("/_watcher/watch/{watch_id}/_activate", map[string]string{
+	path, err := uritemplates.Expand("/_xpack/watcher/watch/{watch_id}/_activate", map[string]string{
 		"watch_id": s.watchId,
 	})
 	if err != nil {

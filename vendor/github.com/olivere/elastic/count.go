@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // CountService is a convenient service for determining the
@@ -104,9 +104,6 @@ func (s *CountService) Index(index ...string) *CountService {
 }
 
 // Type sets the types to use to restrict the results.
-//
-// Deprecated: Types are in the process of being removed. Instead of using a type, prefer to
-// filter on a field on the document.
 func (s *CountService) Type(typ ...string) *CountService {
 	if s.typ == nil {
 		s.typ = make([]string, 0)

@@ -12,11 +12,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // SnapshotCreateRepositoryService creates a snapshot repository.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/modules-snapshots.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-snapshots.html
 // for details.
 type SnapshotCreateRepositoryService struct {
 	client *Client
@@ -171,8 +171,8 @@ func (s *SnapshotCreateRepositoryService) buildURL() (string, url.Values, error)
 	if s.timeout != "" {
 		params.Set("timeout", s.timeout)
 	}
-	if v := s.verify; v != nil {
-		params.Set("verify", fmt.Sprint(*v))
+	if s.verify != nil {
+		params.Set("verify", fmt.Sprintf("%v", *s.verify))
 	}
 	return path, params, nil
 }

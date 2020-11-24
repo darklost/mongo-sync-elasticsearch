@@ -13,7 +13,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // Search for documents in Elasticsearch.
@@ -47,9 +47,6 @@ type SearchService struct {
 	maxConcurrentShardRequests *int  // max_concurrent_shard_requests
 	preFilterShardSize         *int  // pre_filter_shard_size
 	restTotalHitsAsInt         *bool // rest_total_hits_as_int
-
-	ccsMinimizeRoundtrips *bool // ccs_minimize_roundtrips
-
 }
 
 // NewSearchService creates a new service for searching in Elasticsearch.
@@ -123,10 +120,7 @@ func (s *SearchService) Index(index ...string) *SearchService {
 	return s
 }
 
-// Type adds search restrictions for a list of types.
-//
-// Deprecated: Types are in the process of being removed. Instead of using a type, prefer to
-// filter on a field on the document.
+// Types adds search restrictions for a list of types.
 func (s *SearchService) Type(typ ...string) *SearchService {
 	s.typ = append(s.typ, typ...)
 	return s
@@ -167,7 +161,7 @@ func (s *SearchService) TerminateAfter(terminateAfter int) *SearchService {
 
 // SearchType sets the search operation type. Valid values are:
 // "dfs_query_then_fetch" and "query_then_fetch".
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-search-type.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-search-type.html
 // for details.
 func (s *SearchService) SearchType(searchType string) *SearchService {
 	s.searchType = searchType
@@ -359,9 +353,9 @@ func (s *SearchService) TrackScores(trackScores bool) *SearchService {
 
 // TrackTotalHits controls if the total hit count for the query should be tracked.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.1/search-request-track-total-hits.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-track-total-hits.html
 // for details.
-func (s *SearchService) TrackTotalHits(trackTotalHits interface{}) *SearchService {
+func (s *SearchService) TrackTotalHits(trackTotalHits bool) *SearchService {
 	s.searchSource = s.searchSource.TrackTotalHits(trackTotalHits)
 	return s
 }
@@ -369,9 +363,22 @@ func (s *SearchService) TrackTotalHits(trackTotalHits interface{}) *SearchServic
 // SearchAfter allows a different form of pagination by using a live cursor,
 // using the results of the previous page to help the retrieval of the next.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-search-after.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-search-after.html
 func (s *SearchService) SearchAfter(sortValues ...interface{}) *SearchService {
 	s.searchSource = s.searchSource.SearchAfter(sortValues...)
+	return s
+}
+
+// DefaultRescoreWindowSize sets the rescore window size for rescores
+// that don't specify their window.
+func (s *SearchService) DefaultRescoreWindowSize(defaultRescoreWindowSize int) *SearchService {
+	s.searchSource = s.searchSource.DefaultRescoreWindowSize(defaultRescoreWindowSize)
+	return s
+}
+
+// Rescorer adds a rescorer to the search.
+func (s *SearchService) Rescorer(rescore *Rescore) *SearchService {
+	s.searchSource = s.searchSource.Rescorer(rescore)
 	return s
 }
 
@@ -432,6 +439,18 @@ func (s *SearchService) TypedKeys(enabled bool) *SearchService {
 	return s
 }
 
+// RestTotalHitsAsInt is a flag that is temporarily available for ES 7.x
+// servers to return total hits as an int64 instead of a response structure.
+//
+// Warning: Using it indicates that you are using elastic.v6 with ES 7.x,
+// which is an unsupported scenario. Use at your own risk.
+// This option will also be removed with ES 8.x.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/breaking-changes-7.0.html#hits-total-now-object-search-response.
+func (s *SearchService) RestTotalHitsAsInt(enabled bool) *SearchService {
+	s.restTotalHitsAsInt = &enabled
+	return s
+}
+
 // SeqNoPrimaryTerm specifies whether to return sequence number and
 // primary term of the last modification of each hit.
 func (s *SearchService) SeqNoPrimaryTerm(enabled bool) *SearchService {
@@ -465,20 +484,6 @@ func (s *SearchService) MaxConcurrentShardRequests(max int) *SearchService {
 // mandatory to match but the shard bounds and the query are disjoint.
 func (s *SearchService) PreFilterShardSize(threshold int) *SearchService {
 	s.preFilterShardSize = &threshold
-	return s
-}
-
-// RestTotalHitsAsInt indicates whether hits.total should be rendered as an
-// integer or an object in the rest search response.
-func (s *SearchService) RestTotalHitsAsInt(enabled bool) *SearchService {
-	s.restTotalHitsAsInt = &enabled
-	return s
-}
-
-// CCSMinimizeRoundtrips indicates whether network round-trips should be minimized
-// as part of cross-cluster search requests execution.
-func (s *SearchService) CCSMinimizeRoundtrips(enabled bool) *SearchService {
-	s.ccsMinimizeRoundtrips = &enabled
 	return s
 }
 
@@ -548,8 +553,8 @@ func (s *SearchService) buildURL() (string, url.Values, error) {
 	if v := s.ignoreThrottled; v != nil {
 		params.Set("ignore_throttled", fmt.Sprint(*v))
 	}
-	if s.seqNoPrimaryTerm != nil {
-		params.Set("seq_no_primary_term", fmt.Sprint(*s.seqNoPrimaryTerm))
+	if v := s.seqNoPrimaryTerm; v != nil {
+		params.Set("seq_no_primary_term", fmt.Sprint(*v))
 	}
 	if v := s.allowPartialSearchResults; v != nil {
 		params.Set("allow_partial_search_results", fmt.Sprint(*v))
@@ -568,9 +573,6 @@ func (s *SearchService) buildURL() (string, url.Values, error) {
 	}
 	if v := s.restTotalHitsAsInt; v != nil {
 		params.Set("rest_total_hits_as_int", fmt.Sprint(*v))
-	}
-	if v := s.ccsMinimizeRoundtrips; v != nil {
-		params.Set("ccs_minimize_roundtrips", fmt.Sprint(*v))
 	}
 	return path, params, nil
 }
@@ -609,8 +611,8 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 		Path:            path,
 		Params:          params,
 		Body:            body,
-		Headers:         s.headers,
 		MaxResponseSize: s.maxResponseSize,
+		Headers:         s.headers,
 	})
 	if err != nil {
 		return nil, err
@@ -628,20 +630,20 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 
 // SearchResult is the result of a search in Elasticsearch.
 type SearchResult struct {
-	Header          http.Header            `json:"-"`
-	TookInMillis    int64                  `json:"took,omitempty"`             // search time in milliseconds
-	TerminatedEarly bool                   `json:"terminated_early,omitempty"` // request terminated early
-	NumReducePhases int                    `json:"num_reduce_phases,omitempty"`
-	Clusters        []*SearchResultCluster `json:"_clusters,omitempty"`    // 6.1.0+
-	ScrollId        string                 `json:"_scroll_id,omitempty"`   // only used with Scroll and Scan operations
-	Hits            *SearchHits            `json:"hits,omitempty"`         // the actual search hits
-	Suggest         SearchSuggest          `json:"suggest,omitempty"`      // results from suggesters
-	Aggregations    Aggregations           `json:"aggregations,omitempty"` // results from aggregations
-	TimedOut        bool                   `json:"timed_out,omitempty"`    // true if the search timed out
-	Error           *ErrorDetails          `json:"error,omitempty"`        // only used in MultiGet
-	Profile         *SearchProfile         `json:"profile,omitempty"`      // profiling results, if optional Profile API was active for this search
-	Shards          *ShardsInfo            `json:"_shards,omitempty"`      // shard information
-	Status          int                    `json:"status,omitempty"`       // used in MultiSearch
+	Header          http.Header          `json:"-"`
+	TookInMillis    int64                `json:"took,omitempty"`             // search time in milliseconds
+	TerminatedEarly bool                 `json:"terminated_early,omitempty"` // request terminated early
+	NumReducePhases int                  `json:"num_reduce_phases,omitempty"`
+	Clusters        *SearchResultCluster `json:"_clusters,omitempty"`    // 6.1.0+
+	ScrollId        string               `json:"_scroll_id,omitempty"`   // only used with Scroll and Scan operations
+	Hits            *SearchHits          `json:"hits,omitempty"`         // the actual search hits
+	Suggest         SearchSuggest        `json:"suggest,omitempty"`      // results from suggesters
+	Aggregations    Aggregations         `json:"aggregations,omitempty"` // results from aggregations
+	TimedOut        bool                 `json:"timed_out,omitempty"`    // true if the search timed out
+	Error           *ErrorDetails        `json:"error,omitempty"`        // only used in MultiGet
+	Profile         *SearchProfile       `json:"profile,omitempty"`      // profiling results, if optional Profile API was active for this search
+	Shards          *ShardsInfo          `json:"_shards,omitempty"`      // shard information
+	Status          int                  `json:"status,omitempty"`       // used in MultiSearch
 }
 
 // SearchResultCluster holds information about a search response
@@ -653,11 +655,10 @@ type SearchResultCluster struct {
 }
 
 // TotalHits is a convenience function to return the number of hits for
-// a search result. The return value might not be accurate, unless
-// track_total_hits parameter has set to true.
+// a search result.
 func (r *SearchResult) TotalHits() int64 {
-	if r.Hits != nil && r.Hits.TotalHits != nil {
-		return r.Hits.TotalHits.Value
+	if r.Hits != nil {
+		return r.Hits.TotalHits
 	}
 	return 0
 }
@@ -677,7 +678,7 @@ func (r *SearchResult) Each(typ reflect.Type) []interface{} {
 			slice = append(slice, v.Interface())
 			continue
 		}
-		if err := json.Unmarshal(hit.Source, v.Addr().Interface()); err == nil {
+		if err := json.Unmarshal(*hit.Source, v.Addr().Interface()); err == nil {
 			slice = append(slice, v.Interface())
 		}
 	}
@@ -686,7 +687,7 @@ func (r *SearchResult) Each(typ reflect.Type) []interface{} {
 
 // SearchHits specifies the list of search hits.
 type SearchHits struct {
-	TotalHits *TotalHits   `json:"total,omitempty"`     // total number of hits found
+	TotalHits int64        `json:"total"`               // total number of hits found
 	MaxScore  *float64     `json:"max_score,omitempty"` // maximum score of all hits
 	Hits      []*SearchHit `json:"hits,omitempty"`      // the actual hits returned
 }
@@ -696,12 +697,6 @@ type NestedHit struct {
 	Field  string     `json:"field"`
 	Offset int        `json:"offset,omitempty"`
 	Child  *NestedHit `json:"_nested,omitempty"`
-}
-
-// TotalHits specifies total number of hits and its relation
-type TotalHits struct {
-	Value    int64  `json:"value"`    // value of the total hit count
-	Relation string `json:"relation"` // how the value should be interpreted: accurate ("eq") or a lower bound ("gte")
 }
 
 // SearchHit is a single hit.
@@ -718,7 +713,7 @@ type SearchHit struct {
 	PrimaryTerm    *int64                         `json:"_primary_term"`
 	Sort           []interface{}                  `json:"sort,omitempty"`            // sort information
 	Highlight      SearchHitHighlight             `json:"highlight,omitempty"`       // highlighter information
-	Source         json.RawMessage                `json:"_source,omitempty"`         // stored document source
+	Source         *json.RawMessage               `json:"_source,omitempty"`         // stored document source
 	Fields         map[string]interface{}         `json:"fields,omitempty"`          // returned (stored) fields
 	Explanation    *SearchExplanation             `json:"_explanation,omitempty"`    // explains how the score was computed
 	MatchedQueries []string                       `json:"matched_queries,omitempty"` // matched queries
@@ -738,7 +733,7 @@ type SearchHitInnerHits struct {
 }
 
 // SearchExplanation explains how the score for a hit was computed.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-explain.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-explain.html.
 type SearchExplanation struct {
 	Value       float64             `json:"value"`             // e.g. 1.0
 	Description string              `json:"description"`       // e.g. "boost" or "ConstantScore(*:*), product of:"
@@ -748,11 +743,11 @@ type SearchExplanation struct {
 // Suggest
 
 // SearchSuggest is a map of suggestions.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-suggesters.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-suggesters.html.
 type SearchSuggest map[string][]SearchSuggestion
 
 // SearchSuggestion is a single search suggestion.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-suggesters.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-suggesters.html.
 type SearchSuggestion struct {
 	Text    string                   `json:"text"`
 	Offset  int                      `json:"offset"`
@@ -761,7 +756,7 @@ type SearchSuggestion struct {
 }
 
 // SearchSuggestionOption is an option of a SearchSuggestion.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-suggesters.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-suggesters.html.
 type SearchSuggestionOption struct {
 	Text            string              `json:"text"`
 	Index           string              `json:"_index"`
@@ -772,7 +767,7 @@ type SearchSuggestionOption struct {
 	Highlighted     string              `json:"highlighted"`
 	CollateMatch    bool                `json:"collate_match"`
 	Freq            int                 `json:"freq"` // from TermSuggestion.Option in Java API
-	Source          json.RawMessage     `json:"_source"`
+	Source          *json.RawMessage    `json:"_source"`
 	Contexts        map[string][]string `json:"contexts,omitempty"`
 }
 
@@ -826,6 +821,6 @@ type ProfileResult struct {
 // Highlighting
 
 // SearchHitHighlight is the highlight information of a search hit.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-highlighting.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-highlighting.html
 // for a general discussion of highlighting.
 type SearchHitHighlight map[string][]string

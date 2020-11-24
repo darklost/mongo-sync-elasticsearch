@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // DeleteScriptService removes a stored script in Elasticsearch.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/modules-scripting.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-scripting.html
 // for details.
 type DeleteScriptService struct {
 	client *Client

@@ -9,7 +9,7 @@ import "fmt"
 // TermsAggregation is a multi-bucket value source based aggregation
 // where buckets are dynamically built - one per unique value.
 //
-// See: http://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-aggregations-bucket-terms-aggregation.html
+// See: https://www.elasticsearch.org/guide/en/elasticsearch/reference/6.8/search-aggregations-bucket-terms-aggregation.html
 type TermsAggregation struct {
 	field           string
 	script          *Script
@@ -133,6 +133,11 @@ func (a *TermsAggregation) NumPartitions(n int) *TermsAggregation {
 		a.includeExclude = &TermsAggregationIncludeExclude{}
 	}
 	a.includeExclude.NumPartitions = n
+	return a
+}
+
+func (a *TermsAggregation) IncludeExclude(includeExclude *TermsAggregationIncludeExclude) *TermsAggregation {
+	a.includeExclude = includeExclude
 	return a
 }
 

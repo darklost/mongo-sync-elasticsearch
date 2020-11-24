@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesGetTemplateService returns an index template.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-templates.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-templates.html.
 type IndicesGetTemplateService struct {
 	client *Client
 
@@ -25,9 +25,10 @@ type IndicesGetTemplateService struct {
 	filterPath []string    // list of filters used to reduce the response
 	headers    http.Header // custom request-level HTTP headers
 
-	name         []string
-	flatSettings *bool
-	local        *bool
+	name            []string
+	flatSettings    *bool
+	local           *bool
+	includeTypeName *bool
 }
 
 // NewIndicesGetTemplateService creates a new IndicesGetTemplateService.
@@ -97,6 +98,13 @@ func (s *IndicesGetTemplateService) Local(local bool) *IndicesGetTemplateService
 	return s
 }
 
+// IncludeTypeName indicates whether to update the mapping for all fields
+// with the same name across all types or not.
+func (s *IndicesGetTemplateService) IncludeTypeName(include bool) *IndicesGetTemplateService {
+	s.includeTypeName = &include
+	return s
+}
+
 // buildURL builds the URL for the operation.
 func (s *IndicesGetTemplateService) buildURL() (string, url.Values, error) {
 	// Build URL
@@ -127,11 +135,14 @@ func (s *IndicesGetTemplateService) buildURL() (string, url.Values, error) {
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if s.flatSettings != nil {
-		params.Set("flat_settings", fmt.Sprintf("%v", *s.flatSettings))
+	if v := s.flatSettings; v != nil {
+		params.Set("flat_settings", fmt.Sprint(*v))
 	}
-	if s.local != nil {
-		params.Set("local", fmt.Sprintf("%v", *s.local))
+	if v := s.local; v != nil {
+		params.Set("local", fmt.Sprint(*v))
+	}
+	if v := s.includeTypeName; v != nil {
+		params.Set("include_type_name", fmt.Sprint(*v))
 	}
 	return path, params, nil
 }

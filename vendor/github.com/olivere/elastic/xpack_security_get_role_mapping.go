@@ -12,11 +12,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // XPackSecurityGetRoleMappingService retrieves a role mapping by its name.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/security-api-get-role-mapping.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/security-api-get-role-mapping.html.
 type XPackSecurityGetRoleMappingService struct {
 	client *Client
 
@@ -85,7 +85,7 @@ func (s *XPackSecurityGetRoleMappingService) Name(name string) *XPackSecurityGet
 // buildURL builds the URL for the operation.
 func (s *XPackSecurityGetRoleMappingService) buildURL() (string, url.Values, error) {
 	// Build URL
-	path, err := uritemplates.Expand("/_security/role_mapping/{name}", map[string]string{
+	path, err := uritemplates.Expand("/_xpack/security/role_mapping/{name}", map[string]string{
 		"name": s.name,
 	})
 	if err != nil {

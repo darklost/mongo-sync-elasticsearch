@@ -11,13 +11,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesPutMappingService allows to register specific mapping definition
 // for a specific type.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-put-mapping.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-put-mapping.html
 // for details.
 type IndicesPutMappingService struct {
 	client *Client
@@ -28,11 +28,13 @@ type IndicesPutMappingService struct {
 	filterPath []string    // list of filters used to reduce the response
 	headers    http.Header // custom request-level HTTP headers
 
+	typ               string
 	index             []string
 	masterTimeout     string
 	ignoreUnavailable *bool
 	allowNoIndices    *bool
 	expandWildcards   string
+	includeTypeName   *bool
 	updateAllTypes    *bool
 	timeout           string
 	bodyJson          map[string]interface{}
@@ -100,6 +102,12 @@ func (s *IndicesPutMappingService) Index(indices ...string) *IndicesPutMappingSe
 	return s
 }
 
+// Type is the name of the document type.
+func (s *IndicesPutMappingService) Type(typ string) *IndicesPutMappingService {
+	s.typ = typ
+	return s
+}
+
 // Timeout is an explicit operation timeout.
 func (s *IndicesPutMappingService) Timeout(timeout string) *IndicesPutMappingService {
 	s.timeout = timeout
@@ -134,10 +142,17 @@ func (s *IndicesPutMappingService) ExpandWildcards(expandWildcards string) *Indi
 	return s
 }
 
-// UpdateAllTypes, if true, indicates that all fields that span multiple indices
-// should be updated (default: false).
-func (s *IndicesPutMappingService) UpdateAllTypes(updateAllTypes bool) *IndicesPutMappingService {
-	s.updateAllTypes = &updateAllTypes
+// IncludeTypeName indicates whether to update the mapping for all fields
+// with the same name across all types or not.
+func (s *IndicesPutMappingService) IncludeTypeName(include bool) *IndicesPutMappingService {
+	s.includeTypeName = &include
+	return s
+}
+
+// UpdateAllTypes indicates whether to update the mapping for all fields
+// with the same name across all types or not.
+func (s *IndicesPutMappingService) UpdateAllTypes(update bool) *IndicesPutMappingService {
+	s.updateAllTypes = &update
 	return s
 }
 
@@ -155,9 +170,20 @@ func (s *IndicesPutMappingService) BodyString(mapping string) *IndicesPutMapping
 
 // buildURL builds the URL for the operation.
 func (s *IndicesPutMappingService) buildURL() (string, url.Values, error) {
-	path, err := uritemplates.Expand("/{index}/_mapping", map[string]string{
-		"index": strings.Join(s.index, ","),
-	})
+	var err error
+	var path string
+
+	// Build URL: Typ MUST be specified and is verified in Validate.
+	if len(s.index) > 0 {
+		path, err = uritemplates.Expand("/{index}/_mapping/{type}", map[string]string{
+			"index": strings.Join(s.index, ","),
+			"type":  s.typ,
+		})
+	} else {
+		path, err = uritemplates.Expand("/_mapping/{type}", map[string]string{
+			"type": s.typ,
+		})
+	}
 	if err != nil {
 		return "", url.Values{}, err
 	}
@@ -185,8 +211,19 @@ func (s *IndicesPutMappingService) buildURL() (string, url.Values, error) {
 	if s.expandWildcards != "" {
 		params.Set("expand_wildcards", s.expandWildcards)
 	}
-	if s.updateAllTypes != nil {
-		params.Set("update_all_types", fmt.Sprintf("%v", *s.updateAllTypes))
+	if v := s.includeTypeName; v != nil {
+		if *v {
+			params.Set("include_type_name", "true")
+		} else {
+			params.Set("include_type_name", "false")
+		}
+	}
+	if v := s.updateAllTypes; v != nil && *v {
+		if *v {
+			params.Set("update_all_types", "true")
+		} else {
+			params.Set("update_all_types", "false")
+		}
 	}
 	if s.timeout != "" {
 		params.Set("timeout", s.timeout)
@@ -200,8 +237,8 @@ func (s *IndicesPutMappingService) buildURL() (string, url.Values, error) {
 // Validate checks if the operation is valid.
 func (s *IndicesPutMappingService) Validate() error {
 	var invalid []string
-	if len(s.index) == 0 {
-		invalid = append(invalid, "Index")
+	if s.includeTypeName != nil && *s.includeTypeName && s.typ == "" {
+		invalid = append(invalid, "Type")
 	}
 	if s.bodyString == "" && s.bodyJson == nil {
 		invalid = append(invalid, "BodyJson")

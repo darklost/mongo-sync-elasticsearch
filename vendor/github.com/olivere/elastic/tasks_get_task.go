@@ -7,11 +7,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // TasksGetTaskService retrieves the state of a task in the cluster. It is part of the Task Management API
-// documented at https://www.elastic.co/guide/en/elasticsearch/reference/7.0/tasks.html#_current_tasks_information.
+// documented at http://www.elastic.co/guide/en/elasticsearch/reference/5.2/tasks-list.html.
+//
+// It is supported as of Elasticsearch 2.3.0.
 type TasksGetTaskService struct {
 	client *Client
 
@@ -117,8 +119,8 @@ func (s *TasksGetTaskService) buildURL() (string, url.Values, error) {
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if v := s.waitForCompletion; v != nil {
-		params.Set("wait_for_completion", fmt.Sprint(*v))
+	if s.waitForCompletion != nil {
+		params.Set("wait_for_completion", fmt.Sprintf("%v", *s.waitForCompletion))
 	}
 	return path, params, nil
 }

@@ -21,12 +21,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/olivere/elastic/v7/config"
+	"github.com/olivere/elastic/config"
 )
 
 const (
 	// Version is the current version of Elastic.
-	Version = "7.0.8"
+	Version = "6.2.35"
 
 	// DefaultURL is the default endpoint of Elasticsearch on the local machine.
 	// It is used e.g. when initializing a new Client without a specific URL.
@@ -102,19 +102,13 @@ var (
 	noDeprecationLog = func(*http.Request, *http.Response) {}
 )
 
-// Doer is an interface to perform HTTP requests.
-// It can be used for mocking.
-type Doer interface {
-	Do(*http.Request) (*http.Response, error)
-}
-
 // ClientOptionFunc is a function that configures a Client.
 // It is used in NewClient.
 type ClientOptionFunc func(*Client) error
 
 // Client is an Elasticsearch client. Create one by calling NewClient.
 type Client struct {
-	c Doer // e.g. a net/*http.Client to use for requests
+	c *http.Client // net/http Client to use for requests
 
 	connsMu sync.RWMutex // connsMu guards the next block
 	conns   []*conn      // all connections
@@ -169,7 +163,7 @@ type Client struct {
 //
 // If the sniffer is enabled (the default), the new client then sniffes
 // the cluster via the Nodes Info API
-// (see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/cluster-nodes-info.html#cluster-nodes-info).
+// (see https://www.elastic.co/guide/en/elasticsearch/reference/6.8/cluster-nodes-info.html#cluster-nodes-info).
 // It uses the URLs specified by the caller. The caller is responsible
 // to only pass a list of URLs of nodes that belong to the same cluster.
 // This sniffing process is run on startup and periodically.
@@ -465,18 +459,16 @@ func configToOptions(cfg *config.Config) ([]ClientOptionFunc, error) {
 		if cfg.Sniff != nil {
 			options = append(options, SetSniff(*cfg.Sniff))
 		}
-		/*
-			if cfg.Healthcheck != nil {
-				options = append(options, SetHealthcheck(*cfg.Healthcheck))
-			}
-		*/
+		if cfg.Healthcheck != nil {
+			options = append(options, SetHealthcheck(*cfg.Healthcheck))
+		}
 	}
 	return options, nil
 }
 
 // SetHttpClient can be used to specify the http.Client to use when making
 // HTTP requests to Elasticsearch.
-func SetHttpClient(httpClient Doer) ClientOptionFunc {
+func SetHttpClient(httpClient *http.Client) ClientOptionFunc {
 	return func(c *Client) error {
 		if httpClient != nil {
 			c.c = httpClient
@@ -508,6 +500,12 @@ func SetURL(urls ...string) ClientOptionFunc {
 			c.urls = []string{DefaultURL}
 		default:
 			c.urls = urls
+		}
+		// Check URLs
+		for _, urlStr := range c.urls {
+			if _, err := url.Parse(urlStr); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -816,8 +814,6 @@ func (c *Client) Stop() {
 
 	c.infof("elastic: client stopped")
 }
-
-var logDeprecation = func(*http.Request, *http.Response) {}
 
 // errorf logs to the error log.
 func (c *Client) errorf(format string, args ...interface{}) {
@@ -1275,6 +1271,7 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 	basicAuthPassword := c.basicAuthPassword
 	sendGetBodyAs := c.sendGetBodyAs
 	gzipEnabled := c.gzipEnabled
+	healthcheckEnabled := c.healthcheckEnabled
 	retrier := c.retrier
 	if opt.Retrier != nil {
 		retrier = opt.Retrier
@@ -1307,6 +1304,10 @@ func (c *Client) PerformRequest(ctx context.Context, opt PerformRequestOptions) 
 			if !retried {
 				// Force a healtcheck as all connections seem to be dead.
 				c.healthcheck(ctx, timeout, false)
+				if healthcheckEnabled {
+					retried = true
+					continue
+				}
 			}
 			wait, ok, rerr := retrier.Retry(ctx, n, nil, nil, err)
 			if rerr != nil {
@@ -1481,7 +1482,7 @@ func (c *Client) BulkProcessor() *BulkProcessorService {
 
 // Reindex copies data from a source index into a destination index.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-reindex.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-reindex.html
 // for details on the Reindex API.
 func (c *Client) Reindex() *ReindexService {
 	return NewReindexService(c)
@@ -1489,9 +1490,9 @@ func (c *Client) Reindex() *ReindexService {
 
 // TermVectors returns information and statistics on terms in the fields
 // of a particular document.
-func (c *Client) TermVectors(index string) *TermvectorsService {
+func (c *Client) TermVectors(index, typ string) *TermvectorsService {
 	builder := NewTermvectorsService(c)
-	builder = builder.Index(index)
+	builder = builder.Index(index).Type(typ)
 	return builder
 }
 
@@ -1585,6 +1586,11 @@ func (c *Client) RolloverIndex(alias string) *IndicesRolloverService {
 	return NewIndicesRolloverService(c).Alias(alias)
 }
 
+// TypeExists allows to check if one or more types exist in one or more indices.
+func (c *Client) TypeExists() *IndicesExistsTypeService {
+	return NewIndicesExistsTypeService(c)
+}
+
 // IndexStats provides statistics on different operations happining
 // in one or more indices.
 func (c *Client) IndexStats(indices ...string) *IndicesStatsService {
@@ -1599,16 +1605,6 @@ func (c *Client) OpenIndex(name string) *IndicesOpenService {
 // CloseIndex closes an index.
 func (c *Client) CloseIndex(name string) *IndicesCloseService {
 	return NewIndicesCloseService(c).Index(name)
-}
-
-// FreezeIndex freezes an index.
-func (c *Client) FreezeIndex(name string) *IndicesFreezeService {
-	return NewIndicesFreezeService(c).Index(name)
-}
-
-// UnfreezeIndex unfreezes an index.
-func (c *Client) UnfreezeIndex(name string) *IndicesUnfreezeService {
-	return NewIndicesUnfreezeService(c).Index(name)
 }
 
 // IndexGet retrieves information about one or more indices.
@@ -1657,11 +1653,16 @@ func (c *Client) Flush(indices ...string) *IndicesFlushService {
 
 // SyncedFlush performs a synced flush.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-synced-flush.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-synced-flush.html
 // for more details on synched flushes and how they differ from a normal
 // Flush.
 func (c *Client) SyncedFlush(indices ...string) *IndicesSyncedFlushService {
 	return NewIndicesSyncedFlushService(c).Index(indices...)
+}
+
+// ClearCache clears caches for one or more indices.
+func (c *Client) ClearCache(indices ...string) *IndicesClearCacheService {
+	return NewIndicesClearCacheService(c).Index(indices...)
 }
 
 // Alias enables the caller to add and/or remove aliases.
@@ -1750,6 +1751,11 @@ func (c *Client) CatIndices() *CatIndicesService {
 	return NewCatIndicesService(c)
 }
 
+// CatShards returns information about shards.
+func (c *Client) CatShards() *CatShardsService {
+	return NewCatShardsService(c)
+}
+
 // -- Ingest APIs --
 
 // IngestPutPipeline adds pipelines and updates existing pipelines in
@@ -1830,13 +1836,13 @@ func (c *Client) TasksGetTask() *TasksGetTaskService {
 
 // -- Snapshot and Restore --
 
-// TODO Snapshot Delete
-// TODO Snapshot Get
-// TODO Snapshot Restore
-// TODO Snapshot Status
+// SnapshotStatus returns information about the status of a snapshot.
+func (c *Client) SnapshotStatus() *SnapshotStatusService {
+	return NewSnapshotStatusService(c)
+}
 
 // SnapshotCreate creates a snapshot.
-func (c *Client) SnapshotCreate(repository string, snapshot string) *SnapshotCreateService {
+func (c *Client) SnapshotCreate(repository, snapshot string) *SnapshotCreateService {
 	return NewSnapshotCreateService(c).Repository(repository).Snapshot(snapshot)
 }
 
@@ -1846,7 +1852,7 @@ func (c *Client) SnapshotCreateRepository(repository string) *SnapshotCreateRepo
 }
 
 // SnapshotDelete deletes a snapshot in a snapshot repository.
-func (c *Client) SnapshotDelete(repository string, snapshot string) *SnapshotDeleteService {
+func (c *Client) SnapshotDelete(repository, snapshot string) *SnapshotDeleteService {
 	return NewSnapshotDeleteService(c).Repository(repository).Snapshot(snapshot)
 }
 
@@ -1871,7 +1877,7 @@ func (c *Client) SnapshotVerifyRepository(repository string) *SnapshotVerifyRepo
 }
 
 // SnapshotRestore restores the specified indices from a given snapshot
-func (c *Client) SnapshotRestore(repository string, snapshot string) *SnapshotRestoreService {
+func (c *Client) SnapshotRestore(repository, snapshot string) *SnapshotRestoreService {
 	return NewSnapshotRestoreService(c).Repository(repository).Snapshot(snapshot)
 }
 
@@ -1951,39 +1957,7 @@ func (c *Client) XPackSecurityDeleteRole(roleName string) *XPackSecurityDeleteRo
 }
 
 // TODO: Clear role cache API
-// https://www.elastic.co/guide/en/elasticsearch/reference/7.0/security-api-clear-role-cache.html
-
-// XPackSecurityChangePassword changes the password of users in the native realm.
-func (c *Client) XPackSecurityChangePassword(username string) *XPackSecurityChangePasswordService {
-	return NewXPackSecurityChangePasswordService(c).Username(username)
-}
-
-/*
-// XPackSecurityGetUser gets a native user.
-func (c *Client) XPackSecurityGetUser(userName string) *XPackSecurityGetUserService {
-	return NewXPackSecurityGetUserService(c).Name(userName)
-}
-
-// XPackSecurityPutUser adds or updates a native user.
-func (c *Client) XPackSecurityPutUser(userName string) *XPackSecurityPutUserService {
-	return NewXPackSecurityPutUserService(c).Name(userName)
-}
-
-// XPackSecurityEnableUser enables a native user.
-func (c *Client) XPackSecurityEnableUser(userName string) *XPackSecurityEnableUserService {
-	return NewXPackSecurityEnableUserService(c).Name(userName)
-}
-
-// XPackSecurityEnableUser disables a native user.
-func (c *Client) XPackSecurityDisableUser(userName string) *XPackSecurityDisableUserService {
-	return NewXPackSecurityDisableUserService(c).Name(userName)
-}
-
-// XPackSecurityDeleteUser deletes a native user.
-func (c *Client) XPackSecurityDeleteUser(userName string) *XPackSecurityDeleteUserService {
-	return NewXPackSecurityDeleteUserService(c).Name(userName)
-}
-*/
+// https://www.elastic.co/guide/en/elasticsearch/reference/current/security-api-clear-role-cache.html
 
 // -- X-Pack Watcher --
 
@@ -2035,6 +2009,11 @@ func (c *Client) XPackWatchStart() *XPackWatcherStartService {
 // XPackWatchStop stops a watch.
 func (c *Client) XPackWatchStop() *XPackWatcherStopService {
 	return NewXPackWatcherStopService(c)
+}
+
+// XPackWatchRestart restarts a watch.
+func (c *Client) XPackWatchRestart() *XPackWatcherRestartService {
+	return NewXPackWatcherRestartService(c)
 }
 
 // -- Helpers and shortcuts --

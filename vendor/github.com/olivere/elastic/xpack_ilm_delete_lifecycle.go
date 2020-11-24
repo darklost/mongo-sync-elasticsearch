@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // See the documentation at
-// https://www.elastic.co/guide/en/elasticsearch/reference/6.7/ilm-get-lifecycle.html.
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/ilm-get-lifecycle.html.
 type XPackIlmDeleteLifecycleService struct {
 	client *Client
 
@@ -129,8 +129,8 @@ func (s *XPackIlmDeleteLifecycleService) buildURL() (string, url.Values, error) 
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if v := s.flatSettings; v != nil {
-		params.Set("flat_settings", fmt.Sprint(*v))
+	if s.flatSettings != nil {
+		params.Set("flat_settings", fmt.Sprintf("%v", *s.flatSettings))
 	}
 	if s.timeout != "" {
 		params.Set("timeout", s.timeout)
@@ -138,8 +138,8 @@ func (s *XPackIlmDeleteLifecycleService) buildURL() (string, url.Values, error) 
 	if s.masterTimeout != "" {
 		params.Set("master_timeout", s.masterTimeout)
 	}
-	if v := s.local; v != nil {
-		params.Set("local", fmt.Sprint(*v))
+	if s.local != nil {
+		params.Set("local", fmt.Sprintf("%v", *s.local))
 	}
 	return path, params, nil
 }

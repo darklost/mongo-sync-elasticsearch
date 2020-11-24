@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // NodesInfoService allows to retrieve one or more or all of the
 // cluster nodes information.
-// It is documented at https://www.elastic.co/guide/en/elasticsearch/reference/7.0/cluster-nodes-info.html.
+// It is documented at https://www.elastic.co/guide/en/elasticsearch/reference/6.8/cluster-nodes-info.html.
 type NodesInfoService struct {
 	client *Client
 
@@ -36,6 +36,8 @@ type NodesInfoService struct {
 func NewNodesInfoService(client *Client) *NodesInfoService {
 	return &NodesInfoService{
 		client: client,
+		nodeId: []string{"_all"},
+		metric: []string{"_all"},
 	}
 }
 
@@ -103,24 +105,10 @@ func (s *NodesInfoService) FlatSettings(flatSettings bool) *NodesInfoService {
 
 // buildURL builds the URL for the operation.
 func (s *NodesInfoService) buildURL() (string, url.Values, error) {
-	var nodeId, metric string
-
-	if len(s.nodeId) > 0 {
-		nodeId = strings.Join(s.nodeId, ",")
-	} else {
-		nodeId = "_all"
-	}
-
-	if len(s.metric) > 0 {
-		metric = strings.Join(s.metric, ",")
-	} else {
-		metric = "_all"
-	}
-
 	// Build URL
 	path, err := uritemplates.Expand("/_nodes/{node_id}/{metric}", map[string]string{
-		"node_id": nodeId,
-		"metric":  metric,
+		"node_id": strings.Join(s.nodeId, ","),
+		"metric":  strings.Join(s.metric, ","),
 	})
 	if err != nil {
 		return "", url.Values{}, err

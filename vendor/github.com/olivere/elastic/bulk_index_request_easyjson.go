@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson9de0fcbfDecodeGithubComOlivereElasticV7(in *jlexer.Lexer, out *bulkIndexRequestCommandOp) {
+func easyjson9de0fcbfDecodeGithubComOlivereElastic(in *jlexer.Lexer, out *bulkIndexRequestCommandOp) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -100,7 +100,7 @@ func easyjson9de0fcbfDecodeGithubComOlivereElasticV7(in *jlexer.Lexer, out *bulk
 		in.Consumed()
 	}
 }
-func easyjson9de0fcbfEncodeGithubComOlivereElasticV7(out *jwriter.Writer, in bulkIndexRequestCommandOp) {
+func easyjson9de0fcbfEncodeGithubComOlivereElastic(out *jwriter.Writer, in bulkIndexRequestCommandOp) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -216,37 +216,33 @@ func easyjson9de0fcbfEncodeGithubComOlivereElasticV7(out *jwriter.Writer, in bul
 // MarshalJSON supports json.Marshaler interface
 func (v bulkIndexRequestCommandOp) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson9de0fcbfEncodeGithubComOlivereElasticV7(&w, v)
+	easyjson9de0fcbfEncodeGithubComOlivereElastic(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v bulkIndexRequestCommandOp) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson9de0fcbfEncodeGithubComOlivereElasticV7(w, v)
+	easyjson9de0fcbfEncodeGithubComOlivereElastic(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *bulkIndexRequestCommandOp) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson9de0fcbfDecodeGithubComOlivereElasticV7(&r, v)
+	easyjson9de0fcbfDecodeGithubComOlivereElastic(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *bulkIndexRequestCommandOp) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson9de0fcbfDecodeGithubComOlivereElasticV7(l, v)
+	easyjson9de0fcbfDecodeGithubComOlivereElastic(l, v)
 }
-func easyjson9de0fcbfDecodeGithubComOlivereElasticV71(in *jlexer.Lexer, out *bulkIndexRequestCommand) {
+func easyjson9de0fcbfDecodeGithubComOlivereElastic1(in *jlexer.Lexer, out *bulkIndexRequestCommand) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		in.Skip()
 	} else {
 		in.Delim('{')
-		if !in.IsDelim('}') {
-			*out = make(bulkIndexRequestCommand)
-		} else {
-			*out = nil
-		}
+		*out = make(bulkIndexRequestCommand)
 		for !in.IsDelim('}') {
 			key := string(in.String())
 			in.WantColon()
@@ -261,7 +257,7 @@ func easyjson9de0fcbfDecodeGithubComOlivereElasticV71(in *jlexer.Lexer, out *bul
 		in.Consumed()
 	}
 }
-func easyjson9de0fcbfEncodeGithubComOlivereElasticV71(out *jwriter.Writer, in bulkIndexRequestCommand) {
+func easyjson9de0fcbfEncodeGithubComOlivereElastic1(out *jwriter.Writer, in bulkIndexRequestCommand) {
 	if in == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 		out.RawString(`null`)
 	} else {
@@ -284,23 +280,23 @@ func easyjson9de0fcbfEncodeGithubComOlivereElasticV71(out *jwriter.Writer, in bu
 // MarshalJSON supports json.Marshaler interface
 func (v bulkIndexRequestCommand) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson9de0fcbfEncodeGithubComOlivereElasticV71(&w, v)
+	easyjson9de0fcbfEncodeGithubComOlivereElastic1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v bulkIndexRequestCommand) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson9de0fcbfEncodeGithubComOlivereElasticV71(w, v)
+	easyjson9de0fcbfEncodeGithubComOlivereElastic1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *bulkIndexRequestCommand) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson9de0fcbfDecodeGithubComOlivereElasticV71(&r, v)
+	easyjson9de0fcbfDecodeGithubComOlivereElastic1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *bulkIndexRequestCommand) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson9de0fcbfDecodeGithubComOlivereElasticV71(l, v)
+	easyjson9de0fcbfDecodeGithubComOlivereElastic1(l, v)
 }

@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesExistsService checks if an index or indices exist or not.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-exists.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-exists.html
 // for details.
 type IndicesExistsService struct {
 	client *Client
@@ -181,11 +181,12 @@ func (s *IndicesExistsService) Do(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
+	// Get HTTP response
 	res, err := s.client.PerformRequest(ctx, PerformRequestOptions{
 		Method:       "HEAD",
 		Path:         path,
 		Params:       params,
-		IgnoreErrors: []int{404},
+		IgnoreErrors: []int{http.StatusNotFound},
 		Headers:      s.headers,
 	})
 	if err != nil {

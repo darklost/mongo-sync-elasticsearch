@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesPutTemplateService creates or updates index mappings.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-templates.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-templates.html.
 type IndicesPutTemplateService struct {
 	client *Client
 
@@ -25,16 +25,17 @@ type IndicesPutTemplateService struct {
 	filterPath []string    // list of filters used to reduce the response
 	headers    http.Header // custom request-level HTTP headers
 
-	name          string
-	cause         string
-	order         interface{}
-	version       *int
-	create        *bool
-	timeout       string
-	masterTimeout string
-	flatSettings  *bool
-	bodyJson      interface{}
-	bodyString    string
+	name            string
+	cause           string
+	order           interface{}
+	version         *int
+	create          *bool
+	timeout         string
+	masterTimeout   string
+	flatSettings    *bool
+	includeTypeName *bool
+	bodyJson        interface{}
+	bodyString      string
 }
 
 // NewIndicesPutTemplateService creates a new IndicesPutTemplateService.
@@ -135,6 +136,13 @@ func (s *IndicesPutTemplateService) Create(create bool) *IndicesPutTemplateServi
 	return s
 }
 
+// IncludeTypeName indicates whether to update the mapping for all fields
+// with the same name across all types or not.
+func (s *IndicesPutTemplateService) IncludeTypeName(include bool) *IndicesPutTemplateService {
+	s.includeTypeName = &include
+	return s
+}
+
 // BodyJson is documented as: The template definition.
 func (s *IndicesPutTemplateService) BodyJson(body interface{}) *IndicesPutTemplateService {
 	s.bodyJson = body
@@ -191,6 +199,9 @@ func (s *IndicesPutTemplateService) buildURL() (string, url.Values, error) {
 	}
 	if s.flatSettings != nil {
 		params.Set("flat_settings", fmt.Sprintf("%v", *s.flatSettings))
+	}
+	if v := s.includeTypeName; v != nil {
+		params.Set("include_type_name", fmt.Sprint(*v))
 	}
 	return path, params, nil
 }

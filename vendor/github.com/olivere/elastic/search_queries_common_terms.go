@@ -8,11 +8,7 @@ package elastic
 // which improves the precision and recall of search results
 // (by taking stopwords into account), without sacrificing performance.
 // For more details, see:
-// https://www.elastic.co/guide/en/elasticsearch/reference/7.4/query-dsl-common-terms-query.html
-//
-// Deprecated: Use Match query instead (7.3.0+), which skips blocks of
-// documents efficiently, without any configuration, provided that the
-// total number of hits is not tracked.
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/query-dsl-common-terms-query.html
 type CommonTermsQuery struct {
 	Query
 	name                       string

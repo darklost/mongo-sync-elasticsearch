@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 const (
@@ -179,7 +179,7 @@ func (s *ScrollService) Query(query Query) *ScrollService {
 
 // PostFilter is executed as the last filter. It only affects the
 // search hits but not facets. See
-// https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-post-filter.html
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-post-filter.html
 // for details.
 func (s *ScrollService) PostFilter(postFilter Query) *ScrollService {
 	s.ss = s.ss.PostFilter(postFilter)
@@ -188,7 +188,7 @@ func (s *ScrollService) PostFilter(postFilter Query) *ScrollService {
 
 // Slice allows slicing the scroll request into several batches.
 // This is supported in Elasticsearch 5.0 or later.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-scroll.html#sliced-scroll
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-scroll.html#sliced-scroll
 // for details.
 func (s *ScrollService) Slice(sliceQuery Query) *ScrollService {
 	s.ss = s.ss.Slice(sliceQuery)
@@ -209,7 +209,7 @@ func (s *ScrollService) FetchSourceContext(fetchSourceContext *FetchSourceContex
 }
 
 // Version can be set to true to return a version for each search hit.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-version.html.
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-version.html.
 func (s *ScrollService) Version(version bool) *ScrollService {
 	s.ss = s.ss.Version(version)
 	return s
@@ -233,15 +233,6 @@ func (s *ScrollService) SortWithInfo(info SortInfo) *ScrollService {
 // negative impact on scroll performance.
 func (s *ScrollService) SortBy(sorter ...Sorter) *ScrollService {
 	s.ss = s.ss.SortBy(sorter...)
-	return s
-}
-
-// TrackTotalHits controls if the total hit count for the query should be tracked.
-//
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.1/search-request-track-total-hits.html
-// for details.
-func (s *ScrollService) TrackTotalHits(trackTotalHits interface{}) *ScrollService {
-	s.ss = s.ss.TrackTotalHits(trackTotalHits)
 	return s
 }
 
@@ -438,7 +429,16 @@ func (s *ScrollService) buildFirstURL() (string, url.Values, error) {
 	}
 	if len(s.filterPath) > 0 {
 		// Always add "hits._scroll_id", otherwise we cannot scroll
-		s.filterPath = append(s.filterPath, "_scroll_id")
+		var found bool
+		for _, path := range s.filterPath {
+			if path == "_scroll_id" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			s.filterPath = append(s.filterPath, "_scroll_id")
+		}
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
 	if s.size != nil && *s.size > 0 {
@@ -550,7 +550,16 @@ func (s *ScrollService) buildNextURL() (string, url.Values, error) {
 	}
 	if len(s.filterPath) > 0 {
 		// Always add "hits._scroll_id", otherwise we cannot scroll
-		s.filterPath = append(s.filterPath, "_scroll_id")
+		var found bool
+		for _, path := range s.filterPath {
+			if path == "_scroll_id" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			s.filterPath = append(s.filterPath, "_scroll_id")
+		}
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
 

@@ -12,10 +12,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
-// SnapshotCreateService is documented at https://www.elastic.co/guide/en/elasticsearch/reference/7.0/modules-snapshots.html.
+// SnapshotCreateService is documented at https://www.elastic.co/guide/en/elasticsearch/reference/6.8/modules-snapshots.html.
 type SnapshotCreateService struct {
 	client *Client
 
@@ -144,8 +144,8 @@ func (s *SnapshotCreateService) buildURL() (string, url.Values, error) {
 	if s.masterTimeout != "" {
 		params.Set("master_timeout", s.masterTimeout)
 	}
-	if v := s.waitForCompletion; v != nil {
-		params.Set("wait_for_completion", fmt.Sprint(*v))
+	if s.waitForCompletion != nil {
+		params.Set("wait_for_completion", fmt.Sprintf("%v", *s.waitForCompletion))
 	}
 	return path, params, nil
 }

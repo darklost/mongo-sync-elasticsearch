@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // ClusterStateService allows to get a comprehensive state information of the whole cluster.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/cluster-state.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/cluster-state.html
 // for details.
 type ClusterStateService struct {
 	client *Client
@@ -261,34 +261,21 @@ type clusterBlock struct {
 }
 
 type clusterStateMetadata struct {
-	ClusterUUID          string                            `json:"cluster_uuid"`
-	ClusterUUIDCommitted string                            `json:"cluster_uuid_committed"`
-	ClusterCoordination  *clusterCoordinationMetaData      `json:"cluster_coordination"`
-	Templates            map[string]*indexTemplateMetaData `json:"templates"` // template name -> index template metadata
-	Indices              map[string]*indexMetaData         `json:"indices"`   // index name _> meta data
-	RoutingTable         struct {
+	ClusterUUID  string                            `json:"cluster_uuid"`
+	Templates    map[string]*indexTemplateMetaData `json:"templates"` // template name -> index template metadata
+	Indices      map[string]*indexMetaData         `json:"indices"`   // index name _> meta data
+	RoutingTable struct {
 		Indices map[string]*indexRoutingTable `json:"indices"` // index name -> routing table
 	} `json:"routing_table"`
 	RoutingNodes struct {
 		Unassigned []*shardRouting `json:"unassigned"`
 		Nodes      []*shardRouting `json:"nodes"`
 	} `json:"routing_nodes"`
-	Customs        map[string]interface{} `json:"customs"`
-	Ingest         map[string]interface{} `json:"ingest"`
-	StoredScripts  map[string]interface{} `json:"stored_scripts"`
-	IndexGraveyard map[string]interface{} `json:"index-graveyard"`
-}
-
-type clusterCoordinationMetaData struct {
-	Term                   int64         `json:"term"`
-	LastCommittedConfig    interface{}   `json:"last_committed_config,omitempty"`
-	LastAcceptedConfig     interface{}   `json:"last_accepted_config,omitempty"`
-	VotingConfigExclusions []interface{} `json:"voting_config_exclusions,omitempty"`
+	Customs map[string]interface{} `json:"customs"`
 }
 
 type discoveryNode struct {
 	Name             string                 `json:"name"`              // server name, e.g. "es1"
-	EphemeralID      string                 `json:"ephemeral_id"`      // e.g. "paHSLpn6QyuVy_n-GM1JAQ"
 	TransportAddress string                 `json:"transport_address"` // e.g. inet[/1.2.3.4:9300]
 	Attributes       map[string]interface{} `json:"attributes"`        // e.g. { "data": true, "master": true }
 }
@@ -311,12 +298,10 @@ type indexTemplateMetaData struct {
 }
 
 type indexMetaData struct {
-	State             string                 `json:"state"`
-	Settings          map[string]interface{} `json:"settings"`
-	Mappings          map[string]interface{} `json:"mappings"`
-	Aliases           []string               `json:"aliases"` // e.g. [ "alias1", "alias2" ]
-	PrimaryTerms      map[string]interface{} `json:"primary_terms"`
-	InSyncAllocations map[string]interface{} `json:"in_sync_allocations"`
+	State    string                 `json:"state"`
+	Settings map[string]interface{} `json:"settings"`
+	Mappings map[string]interface{} `json:"mappings"`
+	Aliases  []string               `json:"aliases"` // e.g. [ "alias1", "alias2" ]
 }
 
 type indexRoutingTable struct {

@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // UpdateService updates a document in Elasticsearch.
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-update.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-update.html
 // for details.
 type UpdateService struct {
 	client *Client
@@ -53,7 +53,6 @@ type UpdateService struct {
 func NewUpdateService(client *Client) *UpdateService {
 	return &UpdateService{
 		client: client,
-		typ:    "_doc",
 		fields: make([]string, 0),
 	}
 }
@@ -104,9 +103,7 @@ func (s *UpdateService) Index(name string) *UpdateService {
 	return s
 }
 
-// Type is the type of the document.
-//
-// Deprecated: Types are in the process of being removed.
+// Type is the type of the document (required).
 func (s *UpdateService) Type(typ string) *UpdateService {
 	s.typ = typ
 	return s
@@ -164,7 +161,7 @@ func (s *UpdateService) VersionType(versionType string) *UpdateService {
 
 // Refresh the index after performing the update.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-refresh.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-refresh.html
 // for details.
 func (s *UpdateService) Refresh(refresh string) *UpdateService {
 	s.refresh = refresh
@@ -255,20 +252,12 @@ func (s *UpdateService) FetchSourceContext(fetchSourceContext *FetchSourceContex
 // url returns the URL part of the document request.
 func (s *UpdateService) url() (string, url.Values, error) {
 	// Build url
-	var path string
-	var err error
-	if s.typ == "" || s.typ == "_doc" {
-		path, err = uritemplates.Expand("/{index}/_update/{id}", map[string]string{
-			"index": s.index,
-			"id":    s.id,
-		})
-	} else {
-		path, err = uritemplates.Expand("/{index}/{type}/{id}/_update", map[string]string{
-			"index": s.index,
-			"type":  s.typ,
-			"id":    s.id,
-		})
-	}
+	path := "/{index}/{type}/{id}/_update"
+	path, err := uritemplates.Expand(path, map[string]string{
+		"index": s.index,
+		"type":  s.typ,
+		"id":    s.id,
+	})
 	if err != nil {
 		return "", url.Values{}, err
 	}
@@ -320,6 +309,7 @@ func (s *UpdateService) url() (string, url.Values, error) {
 	if v := s.ifPrimaryTerm; v != nil {
 		params.Set("if_primary_term", fmt.Sprintf("%d", *v))
 	}
+
 	return path, params, nil
 }
 
@@ -335,8 +325,8 @@ func (s *UpdateService) body() (interface{}, error) {
 		source["script"] = src
 	}
 
-	if v := s.scriptedUpsert; v != nil {
-		source["scripted_upsert"] = *v
+	if s.scriptedUpsert != nil {
+		source["scripted_upsert"] = *s.scriptedUpsert
 	}
 
 	if s.upsert != nil {
@@ -346,11 +336,11 @@ func (s *UpdateService) body() (interface{}, error) {
 	if s.doc != nil {
 		source["doc"] = s.doc
 	}
-	if v := s.docAsUpsert; v != nil {
-		source["doc_as_upsert"] = *v
+	if s.docAsUpsert != nil {
+		source["doc_as_upsert"] = *s.docAsUpsert
 	}
-	if v := s.detectNoop; v != nil {
-		source["detect_noop"] = *v
+	if s.detectNoop != nil {
+		source["detect_noop"] = *s.detectNoop
 	}
 	if s.fsc != nil {
 		src, err := s.fsc.Source()

@@ -11,11 +11,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IndicesStatsService provides stats on various metrics of one or more
-// indices. See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/indices-stats.html.
+// indices. See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/indices-stats.html.
 type IndicesStatsService struct {
 	client *Client
 
@@ -268,23 +268,24 @@ type IndexStatsDetails struct {
 	Search          *IndexStatsSearch          `json:"search,omitempty"`
 	Merges          *IndexStatsMerges          `json:"merges,omitempty"`
 	Refresh         *IndexStatsRefresh         `json:"refresh,omitempty"`
-	Recovery        *IndexStatsRecovery        `json:"recovery,omitempty"`
 	Flush           *IndexStatsFlush           `json:"flush,omitempty"`
 	Warmer          *IndexStatsWarmer          `json:"warmer,omitempty"`
-	FilterCache     *IndexStatsFilterCache     `json:"filter_cache,omitempty"`
-	IdCache         *IndexStatsIdCache         `json:"id_cache,omitempty"`
+	QueryCache      *IndexStatsQueryCache      `json:"query_cache,omitempty"`
 	Fielddata       *IndexStatsFielddata       `json:"fielddata,omitempty"`
-	Percolate       *IndexStatsPercolate       `json:"percolate,omitempty"`
 	Completion      *IndexStatsCompletion      `json:"completion,omitempty"`
 	Segments        *IndexStatsSegments        `json:"segments,omitempty"`
 	Translog        *IndexStatsTranslog        `json:"translog,omitempty"`
-	Suggest         *IndexStatsSuggest         `json:"suggest,omitempty"`
-	QueryCache      *IndexStatsQueryCache      `json:"query_cache,omitempty"`
 	RequestCache    *IndexStatsRequestCache    `json:"request_cache,omitempty"`
+	Recovery        *IndexStatsRecovery        `json:"recovery,omitempty"`
 	Commit          *IndexStatsCommit          `json:"commit,omitempty"`
+	ShardPath       *IndexStatsShardPath       `json:"shard_path,omitempty"`
 	SeqNo           *IndexStatsSeqNo           `json:"seq_no,omitempty"`
 	RetentionLeases *IndexStatsRetentionLeases `json:"retention_leases,omitempty"`
-	ShardPath       *IndexStatsShardPath       `json:"shard_path,omitempty"`
+
+	FilterCache *IndexStatsFilterCache `json:"filter_cache,omitempty"`
+	IdCache     *IndexStatsIdCache     `json:"id_cache,omitempty"`
+	Percolate   *IndexStatsPercolate   `json:"percolate,omitempty"`
+	Suggest     *IndexStatsSuggest     `json:"suggest,omitempty"`
 }
 
 type IndexStatsRouting struct {
@@ -298,6 +299,13 @@ type IndexStatsShardPath struct {
 	StatePath        string `json:"state_path"` // e.g. "/usr/share/elasticsearch/data/nodes/0"
 	DataPath         string `json:"data_path"`  // e.g. "/usr/share/elasticsearch/data/nodes/0"
 	IsCustomDataPath bool   `json:"is_custom_data_path"`
+}
+
+type IndexStatsCommit struct {
+	ID         string            `json:"id,omitempty"` // lucene commit ID in base64, e.g. "m2tDMYHzSpSV6zJH0lIAnA=="
+	Generation int64             `json:"generation,omitempty"`
+	UserData   map[string]string `json:"user_data,omitempty"`
+	NumDocs    int64             `json:"num_docs,omitempty"`
 }
 
 type IndexStatsDocs struct {
@@ -328,7 +336,7 @@ type IndexStatsIndexing struct {
 
 type IndexStatsGet struct {
 	Total               int64  `json:"total,omitempty"`
-	GetTime             string `json:"getTime,omitempty"` // 7.4.0 uses "getTime", earlier versions used "get_time"
+	GetTime             string `json:"getTime,omitempty"` // getTime on 6.8.3
 	TimeInMillis        int64  `json:"time_in_millis,omitempty"`
 	ExistsTotal         int64  `json:"exists_total,omitempty"`
 	ExistsTime          string `json:"exists_time,omitempty"`
@@ -379,20 +387,10 @@ type IndexStatsMerges struct {
 }
 
 type IndexStatsRefresh struct {
-	Total                     int64  `json:"total,omitempty"`
-	TotalTime                 string `json:"total_time,omitempty"`
-	TotalTimeInMillis         int64  `json:"total_time_in_millis,omitempty"`
-	ExternalTotal             int64  `json:"external_total,omitempty"`
-	ExternalTotalTime         string `json:"external_total_time,omitempty"`
-	ExternalTotalTimeInMillis int64  `json:"external_total_time_in_millis,omitempty"`
-	Listeners                 int64  `json:"listeners,omitempty"`
-}
-
-type IndexStatsRecovery struct {
-	CurrentAsSource      int64  `json:"current_as_source,omitempty"`
-	CurrentAsTarget      int64  `json:"current_as_target,omitempty"`
-	ThrottleTime         string `json:"throttle_time,omitempty"`
-	ThrottleTimeInMillis int64  `json:"throttle_time_in_millis,omitempty"`
+	Total             int64  `json:"total,omitempty"`
+	TotalTime         string `json:"total_time,omitempty"`
+	TotalTimeInMillis int64  `json:"total_time_in_millis,omitempty"`
+	Listeners         int64  `json:"listeners,omitempty"`
 }
 
 type IndexStatsFlush struct {
@@ -407,21 +405,6 @@ type IndexStatsWarmer struct {
 	Total             int64  `json:"total,omitempty"`
 	TotalTime         string `json:"total_time,omitempty"`
 	TotalTimeInMillis int64  `json:"total_time_in_millis,omitempty"`
-}
-
-type IndexStatsRequestCache struct {
-	MemorySize        string `json:"memory_size,omitempty"`
-	MemorySizeInBytes int64  `json:"memory_size_in_bytes,omitempty"`
-	Evictions         int64  `json:"evictions,omitempty"`
-	HitCount          int64  `json:"hit_count,omitempty"`
-	MissCount         int64  `json:"miss_count,omitempty"`
-}
-
-type IndexStatsCommit struct {
-	ID         string            `json:"id,omitempty"` // lucene commit ID in base64, e.g. "m2tDMYHzSpSV6zJH0lIAnA=="
-	Generation int64             `json:"generation,omitempty"`
-	UserData   map[string]string `json:"user_data,omitempty"`
-	NumDocs    int64             `json:"num_docs,omitempty"`
 }
 
 type IndexStatsFilterCache struct {
@@ -508,6 +491,21 @@ type IndexStatsQueryCache struct {
 	CacheSize         int64  `json:"cache_size,omitempty"`
 	CacheCount        int64  `json:"cache_count,omitempty"`
 	Evictions         int64  `json:"evictions,omitempty"`
+}
+
+type IndexStatsRequestCache struct {
+	MemorySize        string `json:"memory_size,omitempty"`
+	MemorySizeInBytes int64  `json:"memory_size_in_bytes,omitempty"`
+	Evictions         int64  `json:"evictions,omitempty"`
+	HitCount          int64  `json:"hit_count,omitempty"`
+	MissCount         int64  `json:"miss_count,omitempty"`
+}
+
+type IndexStatsRecovery struct {
+	CurrentAsSource      int64  `json:"current_as_source,omitempty"`
+	CurrentAsTarget      int64  `json:"current_as_target,omitempty"`
+	ThrottleTime         string `json:"throttle_time,omitempty"`
+	ThrottleTimeInMillis int64  `json:"throttle_time_in_millis,omitempty"`
 }
 
 type IndexStatsSeqNo struct {

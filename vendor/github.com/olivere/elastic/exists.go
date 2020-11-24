@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // ExistsService checks for the existence of a document using HEAD.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-get.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-get.html
 // for details.
 type ExistsService struct {
 	client *Client
@@ -41,7 +41,6 @@ type ExistsService struct {
 func NewExistsService(client *Client) *ExistsService {
 	return &ExistsService{
 		client: client,
-		typ:    "_doc",
 	}
 }
 
@@ -118,7 +117,7 @@ func (s *ExistsService) Realtime(realtime bool) *ExistsService {
 
 // Refresh the shard containing the document before performing the operation.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-refresh.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-refresh.html
 // for details.
 func (s *ExistsService) Refresh(refresh string) *ExistsService {
 	s.refresh = refresh
@@ -164,7 +163,7 @@ func (s *ExistsService) buildURL() (string, url.Values, error) {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
 	if s.realtime != nil {
-		params.Set("realtime", fmt.Sprint(*s.realtime))
+		params.Set("realtime", fmt.Sprintf("%v", *s.realtime))
 	}
 	if s.refresh != "" {
 		params.Set("refresh", s.refresh)
@@ -217,7 +216,7 @@ func (s *ExistsService) Do(ctx context.Context) (bool, error) {
 		Method:       "HEAD",
 		Path:         path,
 		Params:       params,
-		IgnoreErrors: []int{404},
+		IgnoreErrors: []int{http.StatusNotFound},
 		Headers:      s.headers,
 	})
 	if err != nil {

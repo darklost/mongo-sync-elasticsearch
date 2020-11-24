@@ -12,14 +12,14 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // IngestSimulatePipelineService executes a specific pipeline against the set of
 // documents provided in the body of the request.
 //
 // The API is documented at
-// https://www.elastic.co/guide/en/elasticsearch/reference/7.0/simulate-pipeline-api.html.
+// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/simulate-pipeline-api.html.
 type IngestSimulatePipelineService struct {
 	client *Client
 
@@ -138,8 +138,8 @@ func (s *IngestSimulatePipelineService) buildURL() (string, url.Values, error) {
 	if len(s.filterPath) > 0 {
 		params.Set("filter_path", strings.Join(s.filterPath, ","))
 	}
-	if v := s.verbose; v != nil {
-		params.Set("verbose", fmt.Sprint(*v))
+	if s.verbose != nil {
+		params.Set("verbose", fmt.Sprintf("%v", *s.verbose))
 	}
 	return path, params, nil
 }

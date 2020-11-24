@@ -5,7 +5,6 @@
 package elastic
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/uritemplates"
 )
 
 // BulkService allows for batching bulk requests and sending them to
@@ -25,7 +24,7 @@ import (
 // reuse BulkService to send many batches. You do not have to create a new
 // BulkService for each batch.
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-bulk.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-bulk.html
 // for more details.
 type BulkService struct {
 	client  *Client
@@ -141,7 +140,7 @@ func (s *BulkService) Timeout(timeout string) *BulkService {
 // changes to be made visible by a refresh before reying), or "false"
 // (no refresh related actions). The default value is "false".
 //
-// See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/docs-refresh.html
+// See https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docs-refresh.html
 // for details.
 func (s *BulkService) Refresh(refresh string) *BulkService {
 	s.refresh = refresh
@@ -211,7 +210,8 @@ func (s *BulkService) NumberOfActions() int {
 
 func (s *BulkService) bodyAsString() (string, error) {
 	// Pre-allocate to reduce allocs
-	buf := bytes.NewBuffer(make([]byte, 0, s.EstimatedSizeInBytes()))
+	var buf strings.Builder
+	buf.Grow(int(s.EstimatedSizeInBytes()))
 
 	for _, req := range s.requests {
 		source, err := req.Source()
@@ -300,9 +300,9 @@ func (s *BulkService) Do(ctx context.Context) (*BulkResponse, error) {
 		Path:        path,
 		Params:      params,
 		Body:        body,
+		Headers:     s.headers,
 		ContentType: "application/x-ndjson",
 		Retrier:     s.retrier,
-		Headers:     s.headers,
 	})
 	if err != nil {
 		return nil, err
